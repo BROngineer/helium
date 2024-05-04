@@ -397,6 +397,12 @@ func (fs *FlagSet) BoolSlice(name string, opts ...options.FlagOption) {
 	fs.addFlag(f)
 }
 
+func (fs *FlagSet) Counter(name string, opts ...options.FlagOption) {
+	f := generic.NewFlag[generic.Counter](name)
+	options.ApplyForFlag(f, opts...)
+	fs.addFlag(f)
+}
+
 // flagValue returns a pointer to the value of the specified flag in the given FlagSet.
 // If the flag does not exist, it returns an error with the message "unknown flag".
 // If the value is nil, it returns an error with the message "value is nil".
@@ -404,25 +410,25 @@ func (fs *FlagSet) BoolSlice(name string, opts ...options.FlagOption) {
 // The function expects the generic.Allowed type to be one of the types defined in the flags.generic.Allowed interface.
 func flagValue[T generic.Allowed](name string, fs *FlagSet) (*T, error) {
 	var (
-		value T
-		ok    bool
+		valuePtr *T
+		ok       bool
 	)
 
 	f := fs.flagByName(name)
 	if f == nil {
 		return nil, fmt.Errorf("unknown flag '%s'", name)
 	}
-	value, ok = f.Value().(T)
+	valuePtr, ok = f.Value().(*T)
 	if !ok {
-		return nil, fmt.Errorf("getter type '%T' does not match type of the flag '%s'", value, name)
+		return nil, fmt.Errorf("getter type '%T' does not match type of the flag '%s' '%T'", valuePtr, name, f.Value())
 	}
-	return &value, nil
+	return valuePtr, nil
 }
 
 // derefOrDie dereferences a pointer and checks for errors. If the error is not nil,
 // it prints the error message to stderr and exits the program with code 1. If the pointer is nil,
 // it prints an error message to stderr and exits the program with code 1. It returns the dereferenced value.
-func derefOrDie[V generic.Allowed](p *V, err error) V {
+func derefOrDie[T generic.Allowed](p *T, err error) T {
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		os.Exit(1)
@@ -437,7 +443,7 @@ func derefOrDie[V generic.Allowed](p *V, err error) V {
 // ptrOrDie returns the pointer value `p` and exits the program if there is an error `err`.
 // If `err` is not nil, an error message is printed to stderr and the program exits with code 1.
 // The function is used to simplify error handling in flag retrieval functions.
-func ptrOrDie[V generic.Allowed](p *V, err error) *V {
+func ptrOrDie[T generic.Allowed](p *T, err error) *T {
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		os.Exit(1)
@@ -983,4 +989,14 @@ func (fs *FlagSet) GetBoolSlice(name string) []bool {
 //   - flag value has different type
 func (fs *FlagSet) GetBoolSlicePtr(name string) *[]bool {
 	return ptrOrDie(flagValue[[]bool](name, fs))
+}
+
+// GetCounter returns the uint64 value, reflecting the counter, associated with the given name from the FlagSet.
+// It will exit with code 1 if:
+//   - flag does not exist
+//   - flag value is nil
+//   - flag value has different type
+func (fs *FlagSet) GetCounter(name string) uint64 {
+	v := derefOrDie(flagValue[generic.Counter](name, fs))
+	return v.Count()
 }

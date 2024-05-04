@@ -8,6 +8,18 @@ import (
 	"time"
 )
 
+type Counter struct {
+	count uint64
+}
+
+func (c *Counter) update() {
+	c.count = c.count + 1
+}
+
+func (c *Counter) Count() uint64 {
+	return c.count
+}
+
 type intFlag interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64
 }
@@ -37,7 +49,7 @@ type sliceFlag interface {
 }
 
 type Allowed interface {
-	~string | ~bool | intFlag | uintFlag | floatFlag | sliceFlag | time.Duration
+	~string | ~bool | intFlag | uintFlag | floatFlag | sliceFlag | time.Duration | Counter
 }
 
 type Flag[T Allowed] struct {
@@ -50,7 +62,6 @@ type Flag[T Allowed] struct {
 	defaultValue *T
 	value        *T
 	separator    string
-	counter      uint
 }
 
 func (f *Flag[T]) Value() any {
@@ -390,6 +401,16 @@ func (f *Flag[T]) Parse(input string) error {
 			s[i] = r
 		}
 		t = s
+		v = t.(T)
+	case *Counter:
+		val := f.value
+		if val == nil {
+			t = Counter{1}
+		} else {
+			c := any(val).(*Counter)
+			c.update()
+			t = *c
+		}
 		v = t.(T)
 	}
 	f.value = &v
