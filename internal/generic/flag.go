@@ -8,15 +8,21 @@ import (
 	"time"
 )
 
+const defaultSliceSeparator = ","
+
 type Counter struct {
-	count uint64
+	count int
+}
+
+func NewCounter(v int) Counter {
+	return Counter{v}
 }
 
 func (c *Counter) update() {
 	c.count = c.count + 1
 }
 
-func (c *Counter) Count() uint64 {
+func (c *Counter) Count() int {
 	return c.count
 }
 
@@ -75,11 +81,18 @@ func (f *Flag[T]) Name() string {
 	return f.name
 }
 
+func (f *Flag[T]) Description() string {
+	return f.description
+}
+
 func (f *Flag[T]) Shorthand() string {
 	return f.shorthand
 }
 
 func (f *Flag[T]) Separator() string {
+	if f.separator == "" {
+		return defaultSliceSeparator
+	}
 	return f.separator
 }
 
@@ -117,11 +130,18 @@ func (f *Flag[T]) SetShared() {
 
 func (f *Flag[T]) SetDefaultValue(value any) {
 	var v T
-	switch value.(type) {
+	switch any(v).(type) {
+	case Counter:
+		vv, ok := value.(int)
+		if !ok {
+			_, _ = fmt.Fprintf(os.Stderr, "counter must be int, got %T", value)
+			os.Exit(1)
+		}
+		v = any(Counter{vv}).(T)
 	case T:
 		v = value.(T)
 	default:
-		_, _ = fmt.Fprintf(os.Stderr, "Error: wrong type for default value: got %T, wanted %T\n", v, value)
+		_, _ = fmt.Fprintf(os.Stderr, "Error: wrong type for default value: got %T, wanted %T\n", value, v)
 		os.Exit(1)
 	}
 	f.defaultValue = &v
@@ -220,9 +240,17 @@ func (f *Flag[T]) Parse(input string) error {
 		}
 		v, _ = any(d).(T)
 	case *bool:
-		d, err := strconv.ParseBool(input)
-		if err != nil {
-			return err
+		var (
+			d   bool
+			err error
+		)
+		if input == "" {
+			d = true
+		} else {
+			d, err = strconv.ParseBool(input)
+			if err != nil {
+				return err
+			}
 		}
 		v, _ = any(d).(T)
 	case *time.Duration:
@@ -232,10 +260,10 @@ func (f *Flag[T]) Parse(input string) error {
 		}
 		v, _ = any(d).(T)
 	case *[]string:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		v, _ = any(d).(T)
 	case *[]int:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]int, len(d))
 		for i, el := range d {
 			r, err := strconv.Atoi(el)
@@ -247,7 +275,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]int8:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]int8, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseInt(el, 10, 8)
@@ -259,7 +287,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]int16:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]int16, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseInt(el, 10, 16)
@@ -271,7 +299,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]int32:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]int32, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseInt(el, 10, 32)
@@ -283,7 +311,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]int64:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]int64, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseInt(el, 10, 64)
@@ -295,7 +323,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]uint:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]uint, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseUint(el, 10, 32)
@@ -307,7 +335,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]uint8:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]uint8, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseUint(el, 10, 8)
@@ -319,7 +347,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]uint16:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]uint16, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseUint(el, 10, 16)
@@ -331,7 +359,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]uint32:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]uint32, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseUint(el, 10, 32)
@@ -343,7 +371,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]uint64:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]uint64, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseUint(el, 10, 64)
@@ -355,7 +383,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]float32:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]float32, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseFloat(el, 32)
@@ -367,7 +395,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]float64:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]float64, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseFloat(el, 64)
@@ -379,7 +407,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]time.Duration:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]time.Duration, len(d))
 		for i, el := range d {
 			r, err := time.ParseDuration(el)
@@ -391,7 +419,7 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *[]bool:
-		d := strings.Split(input, f.separator)
+		d := strings.Split(input, f.Separator())
 		s := make([]bool, len(d))
 		for i, el := range d {
 			r, err := strconv.ParseBool(el)
@@ -403,11 +431,14 @@ func (f *Flag[T]) Parse(input string) error {
 		t = s
 		v = t.(T)
 	case *Counter:
-		val := f.value
+		var (
+			d = 1
+		)
+		val := f.Value().(*Counter)
 		if val == nil {
-			t = Counter{1}
+			t = Counter{d}
 		} else {
-			c := any(val).(*Counter)
+			c := val
 			c.update()
 			t = *c
 		}

@@ -13,6 +13,7 @@ import (
 type flag interface {
 	Value() any
 	Name() string
+	Description() string
 	Shorthand() string
 	Separator() string
 	IsRequired() bool
@@ -56,9 +57,10 @@ func (fs *FlagSet) addFlag(f flag) {
 	case f.Shorthand() != "":
 		fl = fs.flagByShorthand(f.Shorthand())
 		if fl != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "Flag with shorthand \"%s\" already defined\n", f.Name())
+			_, _ = fmt.Fprintf(os.Stderr, "Flag with shorthand \"%s\" already defined\n", f.Shorthand())
 			os.Exit(1)
 		}
+		fallthrough
 	default:
 		set := make([]flag, len(fs.flags)+1)
 		copy(set, fs.flags)
@@ -996,7 +998,7 @@ func (fs *FlagSet) GetBoolSlicePtr(name string) *[]bool {
 //   - flag does not exist
 //   - flag value is nil
 //   - flag value has different type
-func (fs *FlagSet) GetCounter(name string) uint64 {
+func (fs *FlagSet) GetCounter(name string) int {
 	v := derefOrDie(flagValue[generic.Counter](name, fs))
 	return v.Count()
 }
