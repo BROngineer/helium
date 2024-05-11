@@ -1,12 +1,22 @@
-package helium
+package flag
 
 import (
-	"github.com/brongineer/helium/internal/generic"
-	"github.com/brongineer/helium/options"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
+
+type flagPropertyGetter interface {
+	Value() any
+	Name() string
+	Description() string
+	Shorthand() string
+	Separator() string
+	IsRequired() bool
+	IsShared() bool
+	IsVisited() bool
+	Parse(string) error
+}
 
 type expected struct {
 	description  string
@@ -44,30 +54,29 @@ func (e *expected) Shared() bool {
 	return e.shared
 }
 
-type result[T generic.Allowed] struct {
+type result[T allowed] struct {
 	some *T
 	err  bool
 }
 
-func ptrTo[T any](v T) *T {
+func ptrTo[T allowed](v T) *T {
 	return &v
 }
 
 type flagTest struct {
 	name     string
-	opts     []options.FlagOption
+	opts     []Option
 	expected expected
 }
 
-type getFlagTest[T generic.Allowed] struct {
+type getFlagTest[T allowed] struct {
 	name   string
-	opts   []options.FlagOption
+	opts   []Option
 	input  *string
 	wanted result[T]
 }
 
-func assertFlag[T generic.Allowed](t *testing.T, fs *FlagSet, tt flagTest) {
-	f := fs.flagByName(tt.name)
+func assertFlag[T allowed](t *testing.T, f flagPropertyGetter, tt flagTest) {
 	assert.NotNil(t, f)
 	assert.Equal(t, tt.expected.Description(), f.Description())
 	assert.Equal(t, tt.expected.Shorthand(), f.Shorthand())
@@ -79,14 +88,7 @@ func assertFlag[T generic.Allowed](t *testing.T, fs *FlagSet, tt flagTest) {
 	assert.Equal(t, tt.expected.Shared(), f.IsShared())
 }
 
-func assertGetFlag[T generic.Allowed](
-	t *testing.T,
-	fs *FlagSet,
-	tt getFlagTest[T],
-	getFunc func(string) T,
-	getPtrFunc func(string) *T,
-) {
-	f := fs.flagByName(tt.name)
+func assertGetFlag[T allowed](t *testing.T, f flagPropertyGetter, tt getFlagTest[T]) {
 	assert.NotNil(t, f)
 	if tt.input != nil {
 		if tt.wanted.err {
@@ -96,32 +98,30 @@ func assertGetFlag[T generic.Allowed](
 		assert.NoError(t, f.Parse(*tt.input))
 		assert.True(t, f.IsVisited())
 	}
-	assert.Equal(t, *tt.wanted.some, getFunc(tt.name))
-	if getPtrFunc != nil {
-		assert.Equal(t, *tt.wanted.some, *getPtrFunc(tt.name))
-	}
+	assert.Equal(t, *tt.wanted.some, DerefOrDie[T](f.Value()))
+	assert.Equal(t, tt.wanted.some, PtrOrDie[T](f.Value()))
 }
 
-func TestFlagSet_String(t *testing.T) {
+func TestFlag_String(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue("test")},
+			[]Option{DefaultValue("test")},
 			expected{defaultValue: "test"},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
-				options.Shorthand("s"),
-				options.Required(),
-				options.Shared(),
+			[]Option{
+				Description("description"),
+				Shorthand("s"),
+				Required(),
+				Shared(),
 			},
 			expected{
 				description: "description",
@@ -133,19 +133,18 @@ func TestFlagSet_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.String(tt.name, tt.opts...)
-			assertFlag[string](t, fs, tt)
+			f := NewString(tt.name, tt.opts...)
+			assertFlag[string](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetString(t *testing.T) {
+func TestFlag_GetString(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[string]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("test"),
 			result[string]{
 				ptrTo("test"),
@@ -154,7 +153,7 @@ func TestFlagSet_GetString(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("1"),
 			result[string]{
 				ptrTo("1"),
@@ -163,7 +162,7 @@ func TestFlagSet_GetString(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue("default")},
+			[]Option{DefaultValue("default")},
 			nil,
 			result[string]{
 				ptrTo("default"),
@@ -173,33 +172,33 @@ func TestFlagSet_GetString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.String(tt.name, tt.opts...)
-			assertGetFlag[string](t, fs, tt, fs.GetString, fs.GetStringPtr)
+
+			f := NewString(tt.name, tt.opts...)
+			assertGetFlag[string](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Duration(t *testing.T) {
+func TestFlag_Duration(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(time.Second)},
+			[]Option{DefaultValue(time.Second)},
 			expected{defaultValue: time.Second},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
-				options.Shorthand("s"),
-				options.Required(),
-				options.Shared(),
+			[]Option{
+				Description("description"),
+				Shorthand("s"),
+				Required(),
+				Shared(),
 			},
 			expected{
 				description: "description",
@@ -211,19 +210,19 @@ func TestFlagSet_Duration(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Duration(tt.name, tt.opts...)
-			assertFlag[time.Duration](t, fs, tt)
+
+			f := NewDuration(tt.name, tt.opts...)
+			assertFlag[time.Duration](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetDuration(t *testing.T) {
+func TestFlag_GetDuration(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[time.Duration]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("1s"),
 			result[time.Duration]{
 				ptrTo(time.Second),
@@ -232,7 +231,7 @@ func TestFlagSet_GetDuration(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("1h"),
 			result[time.Duration]{
 				ptrTo(time.Hour),
@@ -241,7 +240,7 @@ func TestFlagSet_GetDuration(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(time.Minute * 5)},
+			[]Option{DefaultValue(time.Minute * 5)},
 			nil,
 			result[time.Duration]{
 				ptrTo(time.Minute * 5),
@@ -250,7 +249,7 @@ func TestFlagSet_GetDuration(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[time.Duration]{
 				nil,
@@ -260,33 +259,33 @@ func TestFlagSet_GetDuration(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Duration(tt.name, tt.opts...)
-			assertGetFlag[time.Duration](t, fs, tt, fs.GetDuration, fs.GetDurationPtr)
+
+			f := NewDuration(tt.name, tt.opts...)
+			assertGetFlag[time.Duration](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Bool(t *testing.T) {
+func TestFlag_Bool(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(true)},
+			[]Option{DefaultValue(true)},
 			expected{defaultValue: true},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
-				options.Shorthand("s"),
-				options.Required(),
-				options.Shared(),
+			[]Option{
+				Description("description"),
+				Shorthand("s"),
+				Required(),
+				Shared(),
 			},
 			expected{
 				description: "description",
@@ -298,19 +297,19 @@ func TestFlagSet_Bool(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Bool(tt.name, tt.opts...)
-			assertFlag[bool](t, fs, tt)
+
+			f := NewBool(tt.name, tt.opts...)
+			assertFlag[bool](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetBool(t *testing.T) {
+func TestFlag_GetBool(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[bool]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("false"),
 			result[bool]{
 				ptrTo(false),
@@ -319,7 +318,7 @@ func TestFlagSet_GetBool(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("1"),
 			result[bool]{
 				ptrTo(true),
@@ -328,7 +327,7 @@ func TestFlagSet_GetBool(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(true)},
+			[]Option{DefaultValue(true)},
 			nil,
 			result[bool]{
 				ptrTo(true),
@@ -337,7 +336,7 @@ func TestFlagSet_GetBool(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(false)},
+			[]Option{DefaultValue(false)},
 			ptrTo(""),
 			result[bool]{
 				ptrTo(true),
@@ -346,7 +345,7 @@ func TestFlagSet_GetBool(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("no"),
 			result[bool]{
 				nil,
@@ -356,30 +355,30 @@ func TestFlagSet_GetBool(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Bool(tt.name, tt.opts...)
-			assertGetFlag[bool](t, fs, tt, fs.GetBool, fs.GetBoolPtr)
+
+			f := NewBool(tt.name, tt.opts...)
+			assertGetFlag[bool](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Int(t *testing.T) {
+func TestFlag_Int(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(42)},
+			[]Option{DefaultValue(42)},
 			expected{defaultValue: 42},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -390,19 +389,19 @@ func TestFlagSet_Int(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int(tt.name, tt.opts...)
-			assertFlag[int](t, fs, tt)
+
+			f := NewInt(tt.name, tt.opts...)
+			assertFlag[int](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetInt(t *testing.T) {
+func TestFlag_GetInt(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[int]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42"),
 			result[int]{
 				ptrTo(42),
@@ -411,7 +410,7 @@ func TestFlagSet_GetInt(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(42)},
+			[]Option{DefaultValue(42)},
 			nil,
 			result[int]{
 				ptrTo(42),
@@ -420,7 +419,7 @@ func TestFlagSet_GetInt(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[int]{
 				nil,
@@ -430,30 +429,30 @@ func TestFlagSet_GetInt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int(tt.name, tt.opts...)
-			assertGetFlag[int](t, fs, tt, fs.GetInt, fs.GetIntPtr)
+
+			f := NewInt(tt.name, tt.opts...)
+			assertGetFlag[int](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Int8(t *testing.T) {
+func TestFlag_Int8(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(int8(42))},
+			[]Option{DefaultValue(int8(42))},
 			expected{defaultValue: int8(42)},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -464,19 +463,19 @@ func TestFlagSet_Int8(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int8(tt.name, tt.opts...)
-			assertFlag[int8](t, fs, tt)
+
+			f := NewInt8(tt.name, tt.opts...)
+			assertFlag[int8](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetInt8(t *testing.T) {
+func TestFlag_GetInt8(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[int8]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42"),
 			result[int8]{
 				ptrTo(int8(42)),
@@ -485,7 +484,7 @@ func TestFlagSet_GetInt8(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(int8(42))},
+			[]Option{DefaultValue(int8(42))},
 			nil,
 			result[int8]{
 				ptrTo(int8(42)),
@@ -494,7 +493,7 @@ func TestFlagSet_GetInt8(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[int8]{
 				nil,
@@ -504,30 +503,30 @@ func TestFlagSet_GetInt8(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int8(tt.name, tt.opts...)
-			assertGetFlag[int8](t, fs, tt, fs.GetInt8, fs.GetInt8Ptr)
+
+			f := NewInt8(tt.name, tt.opts...)
+			assertGetFlag[int8](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Int16(t *testing.T) {
+func TestFlag_Int16(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(int16(42))},
+			[]Option{DefaultValue(int16(42))},
 			expected{defaultValue: int16(42)},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -538,19 +537,19 @@ func TestFlagSet_Int16(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int16(tt.name, tt.opts...)
-			assertFlag[int16](t, fs, tt)
+
+			f := NewInt16(tt.name, tt.opts...)
+			assertFlag[int16](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetInt16(t *testing.T) {
+func TestFlag_GetInt16(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[int16]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42"),
 			result[int16]{
 				ptrTo(int16(42)),
@@ -559,7 +558,7 @@ func TestFlagSet_GetInt16(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(int16(42))},
+			[]Option{DefaultValue(int16(42))},
 			nil,
 			result[int16]{
 				ptrTo(int16(42)),
@@ -568,7 +567,7 @@ func TestFlagSet_GetInt16(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[int16]{
 				nil,
@@ -578,30 +577,30 @@ func TestFlagSet_GetInt16(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int16(tt.name, tt.opts...)
-			assertGetFlag[int16](t, fs, tt, fs.GetInt16, fs.GetInt16Ptr)
+
+			f := NewInt16(tt.name, tt.opts...)
+			assertGetFlag[int16](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Int32(t *testing.T) {
+func TestFlag_Int32(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(int32(42))},
+			[]Option{DefaultValue(int32(42))},
 			expected{defaultValue: int32(42)},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -612,19 +611,19 @@ func TestFlagSet_Int32(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int32(tt.name, tt.opts...)
-			assertFlag[int32](t, fs, tt)
+
+			f := NewInt32(tt.name, tt.opts...)
+			assertFlag[int32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetInt32(t *testing.T) {
+func TestFlag_GetInt32(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[int32]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42"),
 			result[int32]{
 				ptrTo(int32(42)),
@@ -633,7 +632,7 @@ func TestFlagSet_GetInt32(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(int32(42))},
+			[]Option{DefaultValue(int32(42))},
 			nil,
 			result[int32]{
 				ptrTo(int32(42)),
@@ -642,7 +641,7 @@ func TestFlagSet_GetInt32(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[int32]{
 				nil,
@@ -652,30 +651,30 @@ func TestFlagSet_GetInt32(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int32(tt.name, tt.opts...)
-			assertGetFlag[int32](t, fs, tt, fs.GetInt32, fs.GetInt32Ptr)
+
+			f := NewInt32(tt.name, tt.opts...)
+			assertGetFlag[int32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Int64(t *testing.T) {
+func TestFlag_Int64(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(int64(42))},
+			[]Option{DefaultValue(int64(42))},
 			expected{defaultValue: int64(42)},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -686,19 +685,19 @@ func TestFlagSet_Int64(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int64(tt.name, tt.opts...)
-			assertFlag[int64](t, fs, tt)
+
+			f := NewInt64(tt.name, tt.opts...)
+			assertFlag[int64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetInt64(t *testing.T) {
+func TestFlag_GetInt64(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[int64]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42"),
 			result[int64]{
 				ptrTo(int64(42)),
@@ -707,7 +706,7 @@ func TestFlagSet_GetInt64(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(int64(42))},
+			[]Option{DefaultValue(int64(42))},
 			nil,
 			result[int64]{
 				ptrTo(int64(42)),
@@ -716,7 +715,7 @@ func TestFlagSet_GetInt64(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[int64]{
 				nil,
@@ -726,30 +725,30 @@ func TestFlagSet_GetInt64(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int64(tt.name, tt.opts...)
-			assertGetFlag[int64](t, fs, tt, fs.GetInt64, fs.GetInt64Ptr)
+
+			f := NewInt64(tt.name, tt.opts...)
+			assertGetFlag[int64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Uint(t *testing.T) {
+func TestFlag_Uint(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(uint(42))},
+			[]Option{DefaultValue(uint(42))},
 			expected{defaultValue: uint(42)},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -760,19 +759,19 @@ func TestFlagSet_Uint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint(tt.name, tt.opts...)
-			assertFlag[uint](t, fs, tt)
+
+			f := NewUint(tt.name, tt.opts...)
+			assertFlag[uint](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetUint(t *testing.T) {
+func TestFlag_GetUint(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[uint]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42"),
 			result[uint]{
 				ptrTo(uint(42)),
@@ -781,7 +780,7 @@ func TestFlagSet_GetUint(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(uint(42))},
+			[]Option{DefaultValue(uint(42))},
 			nil,
 			result[uint]{
 				ptrTo(uint(42)),
@@ -790,7 +789,7 @@ func TestFlagSet_GetUint(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[uint]{
 				nil,
@@ -800,30 +799,30 @@ func TestFlagSet_GetUint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint(tt.name, tt.opts...)
-			assertGetFlag[uint](t, fs, tt, fs.GetUint, fs.GetUintPtr)
+
+			f := NewUint(tt.name, tt.opts...)
+			assertGetFlag[uint](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Uint8(t *testing.T) {
+func TestFlag_Uint8(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(uint8(42))},
+			[]Option{DefaultValue(uint8(42))},
 			expected{defaultValue: uint8(42)},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -834,19 +833,19 @@ func TestFlagSet_Uint8(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint8(tt.name, tt.opts...)
-			assertFlag[uint8](t, fs, tt)
+
+			f := NewUint8(tt.name, tt.opts...)
+			assertFlag[uint8](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetUint8(t *testing.T) {
+func TestFlag_GetUint8(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[uint8]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42"),
 			result[uint8]{
 				ptrTo(uint8(42)),
@@ -855,7 +854,7 @@ func TestFlagSet_GetUint8(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(uint8(42))},
+			[]Option{DefaultValue(uint8(42))},
 			nil,
 			result[uint8]{
 				ptrTo(uint8(42)),
@@ -864,7 +863,7 @@ func TestFlagSet_GetUint8(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[uint8]{
 				nil,
@@ -874,30 +873,30 @@ func TestFlagSet_GetUint8(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint8(tt.name, tt.opts...)
-			assertGetFlag[uint8](t, fs, tt, fs.GetUint8, fs.GetUint8Ptr)
+
+			f := NewUint8(tt.name, tt.opts...)
+			assertGetFlag[uint8](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Uint16(t *testing.T) {
+func TestFlag_Uint16(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(uint16(42))},
+			[]Option{DefaultValue(uint16(42))},
 			expected{defaultValue: uint16(42)},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -908,19 +907,19 @@ func TestFlagSet_Uint16(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint16(tt.name, tt.opts...)
-			assertFlag[uint16](t, fs, tt)
+
+			f := NewUint16(tt.name, tt.opts...)
+			assertFlag[uint16](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetUint16(t *testing.T) {
+func TestFlag_GetUint16(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[uint16]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42"),
 			result[uint16]{
 				ptrTo(uint16(42)),
@@ -929,7 +928,7 @@ func TestFlagSet_GetUint16(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(uint16(42))},
+			[]Option{DefaultValue(uint16(42))},
 			nil,
 			result[uint16]{
 				ptrTo(uint16(42)),
@@ -938,7 +937,7 @@ func TestFlagSet_GetUint16(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[uint16]{
 				nil,
@@ -948,30 +947,30 @@ func TestFlagSet_GetUint16(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint16(tt.name, tt.opts...)
-			assertGetFlag[uint16](t, fs, tt, fs.GetUint16, fs.GetUint16Ptr)
+
+			f := NewUint16(tt.name, tt.opts...)
+			assertGetFlag[uint16](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Uint32(t *testing.T) {
+func TestFlag_Uint32(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(uint32(42))},
+			[]Option{DefaultValue(uint32(42))},
 			expected{defaultValue: uint32(42)},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -982,19 +981,19 @@ func TestFlagSet_Uint32(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint32(tt.name, tt.opts...)
-			assertFlag[uint32](t, fs, tt)
+
+			f := NewUint32(tt.name, tt.opts...)
+			assertFlag[uint32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetUint32(t *testing.T) {
+func TestFlag_GetUint32(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[uint32]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42"),
 			result[uint32]{
 				ptrTo(uint32(42)),
@@ -1003,7 +1002,7 @@ func TestFlagSet_GetUint32(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(uint32(42))},
+			[]Option{DefaultValue(uint32(42))},
 			nil,
 			result[uint32]{
 				ptrTo(uint32(42)),
@@ -1012,7 +1011,7 @@ func TestFlagSet_GetUint32(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[uint32]{
 				nil,
@@ -1022,30 +1021,30 @@ func TestFlagSet_GetUint32(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint32(tt.name, tt.opts...)
-			assertGetFlag[uint32](t, fs, tt, fs.GetUint32, fs.GetUint32Ptr)
+
+			f := NewUint32(tt.name, tt.opts...)
+			assertGetFlag[uint32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Uint64(t *testing.T) {
+func TestFlag_Uint64(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(uint64(42))},
+			[]Option{DefaultValue(uint64(42))},
 			expected{defaultValue: uint64(42)},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1056,19 +1055,19 @@ func TestFlagSet_Uint64(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint64(tt.name, tt.opts...)
-			assertFlag[uint64](t, fs, tt)
+
+			f := NewUint64(tt.name, tt.opts...)
+			assertFlag[uint64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetUint64(t *testing.T) {
+func TestFlag_GetUint64(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[uint64]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42"),
 			result[uint64]{
 				ptrTo(uint64(42)),
@@ -1077,7 +1076,7 @@ func TestFlagSet_GetUint64(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(uint64(42))},
+			[]Option{DefaultValue(uint64(42))},
 			nil,
 			result[uint64]{
 				ptrTo(uint64(42)),
@@ -1086,7 +1085,7 @@ func TestFlagSet_GetUint64(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[uint64]{
 				nil,
@@ -1096,30 +1095,30 @@ func TestFlagSet_GetUint64(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint64(tt.name, tt.opts...)
-			assertGetFlag[uint64](t, fs, tt, fs.GetUint64, fs.GetUint64Ptr)
+
+			f := NewUint64(tt.name, tt.opts...)
+			assertGetFlag[uint64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Float32(t *testing.T) {
+func TestFlag_Float32(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(float32(42.0))},
+			[]Option{DefaultValue(float32(42.0))},
 			expected{defaultValue: float32(42.0)},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1130,19 +1129,19 @@ func TestFlagSet_Float32(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Float32(tt.name, tt.opts...)
-			assertFlag[float32](t, fs, tt)
+
+			f := NewFloat32(tt.name, tt.opts...)
+			assertFlag[float32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetFloat32(t *testing.T) {
+func TestFlag_GetFloat32(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[float32]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42.0"),
 			result[float32]{
 				ptrTo(float32(42.0)),
@@ -1151,7 +1150,7 @@ func TestFlagSet_GetFloat32(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(float32(42.0))},
+			[]Option{DefaultValue(float32(42.0))},
 			nil,
 			result[float32]{
 				ptrTo(float32(42.0)),
@@ -1160,7 +1159,7 @@ func TestFlagSet_GetFloat32(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[float32]{
 				nil,
@@ -1170,30 +1169,30 @@ func TestFlagSet_GetFloat32(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Float32(tt.name, tt.opts...)
-			assertGetFlag[float32](t, fs, tt, fs.GetFloat32, fs.GetFloat32Ptr)
+
+			f := NewFloat32(tt.name, tt.opts...)
+			assertGetFlag[float32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Float64(t *testing.T) {
+func TestFlag_Float64(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(42.0)},
+			[]Option{DefaultValue(42.0)},
 			expected{defaultValue: 42.0},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1204,19 +1203,19 @@ func TestFlagSet_Float64(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Float64(tt.name, tt.opts...)
-			assertFlag[float64](t, fs, tt)
+
+			f := NewFloat64(tt.name, tt.opts...)
+			assertFlag[float64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetFloat64(t *testing.T) {
+func TestFlag_GetFloat64(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[float64]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42.0"),
 			result[float64]{
 				ptrTo(42.0),
@@ -1225,7 +1224,7 @@ func TestFlagSet_GetFloat64(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(42.0)},
+			[]Option{DefaultValue(42.0)},
 			nil,
 			result[float64]{
 				ptrTo(42.0),
@@ -1234,7 +1233,7 @@ func TestFlagSet_GetFloat64(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[float64]{
 				nil,
@@ -1244,32 +1243,32 @@ func TestFlagSet_GetFloat64(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Float64(tt.name, tt.opts...)
-			assertGetFlag[float64](t, fs, tt, fs.GetFloat64, fs.GetFloat64Ptr)
+
+			f := NewFloat64(tt.name, tt.opts...)
+			assertGetFlag[float64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_IntSlice(t *testing.T) {
+func TestFlag_IntSlice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]int{42})},
+			[]Option{DefaultValue([]int{42})},
 			expected{defaultValue: []int{42}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1280,19 +1279,19 @@ func TestFlagSet_IntSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.IntSlice(tt.name, tt.opts...)
-			assertFlag[[]int](t, fs, tt)
+
+			f := NewIntSlice(tt.name, tt.opts...)
+			assertFlag[[]int](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetIntSlice(t *testing.T) {
+func TestFlag_GetIntSlice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]int]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42|1"),
 			result[[]int]{
 				ptrTo([]int{42, 1}),
@@ -1301,7 +1300,7 @@ func TestFlagSet_GetIntSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]int]{
 				ptrTo([]int{42, 1}),
@@ -1310,7 +1309,7 @@ func TestFlagSet_GetIntSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]int{42, 1})},
+			[]Option{DefaultValue([]int{42, 1})},
 			nil,
 			result[[]int]{
 				ptrTo([]int{42, 1}),
@@ -1319,7 +1318,7 @@ func TestFlagSet_GetIntSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]int]{
 				nil,
@@ -1329,32 +1328,32 @@ func TestFlagSet_GetIntSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.IntSlice(tt.name, tt.opts...)
-			assertGetFlag[[]int](t, fs, tt, fs.GetIntSlice, fs.GetIntSlicePtr)
+
+			f := NewIntSlice(tt.name, tt.opts...)
+			assertGetFlag[[]int](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Int8Slice(t *testing.T) {
+func TestFlag_Int8Slice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]int8{42})},
+			[]Option{DefaultValue([]int8{42})},
 			expected{defaultValue: []int8{42}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1365,19 +1364,19 @@ func TestFlagSet_Int8Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int8Slice(tt.name, tt.opts...)
-			assertFlag[[]int8](t, fs, tt)
+
+			f := NewInt8Slice(tt.name, tt.opts...)
+			assertFlag[[]int8](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetInt8Slice(t *testing.T) {
+func TestFlag_GetInt8Slice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]int8]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42|1"),
 			result[[]int8]{
 				ptrTo([]int8{42, 1}),
@@ -1386,7 +1385,7 @@ func TestFlagSet_GetInt8Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]int8]{
 				ptrTo([]int8{42, 1}),
@@ -1395,7 +1394,7 @@ func TestFlagSet_GetInt8Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]int8{42, 1})},
+			[]Option{DefaultValue([]int8{42, 1})},
 			nil,
 			result[[]int8]{
 				ptrTo([]int8{42, 1}),
@@ -1404,7 +1403,7 @@ func TestFlagSet_GetInt8Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]int8]{
 				nil,
@@ -1414,32 +1413,32 @@ func TestFlagSet_GetInt8Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int8Slice(tt.name, tt.opts...)
-			assertGetFlag[[]int8](t, fs, tt, fs.GetInt8Slice, fs.GetInt8SlicePtr)
+
+			f := NewInt8Slice(tt.name, tt.opts...)
+			assertGetFlag[[]int8](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Int16Slice(t *testing.T) {
+func TestFlag_Int16Slice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]int16{42})},
+			[]Option{DefaultValue([]int16{42})},
 			expected{defaultValue: []int16{42}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1450,19 +1449,19 @@ func TestFlagSet_Int16Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int16Slice(tt.name, tt.opts...)
-			assertFlag[[]int16](t, fs, tt)
+
+			f := NewInt16Slice(tt.name, tt.opts...)
+			assertFlag[[]int16](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetInt16Slice(t *testing.T) {
+func TestFlag_GetInt16Slice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]int16]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42|1"),
 			result[[]int16]{
 				ptrTo([]int16{42, 1}),
@@ -1471,7 +1470,7 @@ func TestFlagSet_GetInt16Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]int16]{
 				ptrTo([]int16{42, 1}),
@@ -1480,7 +1479,7 @@ func TestFlagSet_GetInt16Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]int16{42, 1})},
+			[]Option{DefaultValue([]int16{42, 1})},
 			nil,
 			result[[]int16]{
 				ptrTo([]int16{42, 1}),
@@ -1489,7 +1488,7 @@ func TestFlagSet_GetInt16Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]int16]{
 				nil,
@@ -1499,32 +1498,32 @@ func TestFlagSet_GetInt16Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int16Slice(tt.name, tt.opts...)
-			assertGetFlag[[]int16](t, fs, tt, fs.GetInt16Slice, fs.GetInt16SlicePtr)
+
+			f := NewInt16Slice(tt.name, tt.opts...)
+			assertGetFlag[[]int16](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Int32Slice(t *testing.T) {
+func TestFlag_Int32Slice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]int32{42})},
+			[]Option{DefaultValue([]int32{42})},
 			expected{defaultValue: []int32{42}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1535,19 +1534,19 @@ func TestFlagSet_Int32Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int32Slice(tt.name, tt.opts...)
-			assertFlag[[]int32](t, fs, tt)
+
+			f := NewInt32Slice(tt.name, tt.opts...)
+			assertFlag[[]int32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetInt32Slice(t *testing.T) {
+func TestFlag_GetInt32Slice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]int32]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42|1"),
 			result[[]int32]{
 				ptrTo([]int32{42, 1}),
@@ -1556,7 +1555,7 @@ func TestFlagSet_GetInt32Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]int32]{
 				ptrTo([]int32{42, 1}),
@@ -1565,7 +1564,7 @@ func TestFlagSet_GetInt32Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]int32{42, 1})},
+			[]Option{DefaultValue([]int32{42, 1})},
 			nil,
 			result[[]int32]{
 				ptrTo([]int32{42, 1}),
@@ -1574,7 +1573,7 @@ func TestFlagSet_GetInt32Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]int32]{
 				nil,
@@ -1584,32 +1583,32 @@ func TestFlagSet_GetInt32Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int32Slice(tt.name, tt.opts...)
-			assertGetFlag[[]int32](t, fs, tt, fs.GetInt32Slice, fs.GetInt32SlicePtr)
+
+			f := NewInt32Slice(tt.name, tt.opts...)
+			assertGetFlag[[]int32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Int64Slice(t *testing.T) {
+func TestFlag_Int64Slice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]int64{42})},
+			[]Option{DefaultValue([]int64{42})},
 			expected{defaultValue: []int64{42}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1620,19 +1619,19 @@ func TestFlagSet_Int64Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int64Slice(tt.name, tt.opts...)
-			assertFlag[[]int64](t, fs, tt)
+
+			f := NewInt64Slice(tt.name, tt.opts...)
+			assertFlag[[]int64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetInt64Slice(t *testing.T) {
+func TestFlag_GetInt64Slice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]int64]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42|1"),
 			result[[]int64]{
 				ptrTo([]int64{42, 1}),
@@ -1641,7 +1640,7 @@ func TestFlagSet_GetInt64Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]int64]{
 				ptrTo([]int64{42, 1}),
@@ -1650,7 +1649,7 @@ func TestFlagSet_GetInt64Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]int64{42, 1})},
+			[]Option{DefaultValue([]int64{42, 1})},
 			nil,
 			result[[]int64]{
 				ptrTo([]int64{42, 1}),
@@ -1659,7 +1658,7 @@ func TestFlagSet_GetInt64Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]int64]{
 				nil,
@@ -1669,32 +1668,32 @@ func TestFlagSet_GetInt64Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Int64Slice(tt.name, tt.opts...)
-			assertGetFlag[[]int64](t, fs, tt, fs.GetInt64Slice, fs.GetInt64SlicePtr)
+
+			f := NewInt64Slice(tt.name, tt.opts...)
+			assertGetFlag[[]int64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_UintSlice(t *testing.T) {
+func TestFlag_UintSlice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]uint{42})},
+			[]Option{DefaultValue([]uint{42})},
 			expected{defaultValue: []uint{42}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1705,19 +1704,19 @@ func TestFlagSet_UintSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.UintSlice(tt.name, tt.opts...)
-			assertFlag[[]uint](t, fs, tt)
+
+			f := NewUintSlice(tt.name, tt.opts...)
+			assertFlag[[]uint](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetUintSlice(t *testing.T) {
+func TestFlag_GetUintSlice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]uint]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42|1"),
 			result[[]uint]{
 				ptrTo([]uint{42, 1}),
@@ -1726,7 +1725,7 @@ func TestFlagSet_GetUintSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]uint]{
 				ptrTo([]uint{42, 1}),
@@ -1735,7 +1734,7 @@ func TestFlagSet_GetUintSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]uint{42, 1})},
+			[]Option{DefaultValue([]uint{42, 1})},
 			nil,
 			result[[]uint]{
 				ptrTo([]uint{42, 1}),
@@ -1744,7 +1743,7 @@ func TestFlagSet_GetUintSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]uint]{
 				nil,
@@ -1754,32 +1753,32 @@ func TestFlagSet_GetUintSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.UintSlice(tt.name, tt.opts...)
-			assertGetFlag[[]uint](t, fs, tt, fs.GetUintSlice, fs.GetUintSlicePtr)
+
+			f := NewUintSlice(tt.name, tt.opts...)
+			assertGetFlag[[]uint](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Uint8Slice(t *testing.T) {
+func TestFlag_Uint8Slice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]uint8{42})},
+			[]Option{DefaultValue([]uint8{42})},
 			expected{defaultValue: []uint8{42}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1790,19 +1789,19 @@ func TestFlagSet_Uint8Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint8Slice(tt.name, tt.opts...)
-			assertFlag[[]uint8](t, fs, tt)
+
+			f := NewUint8Slice(tt.name, tt.opts...)
+			assertFlag[[]uint8](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetUint8Slice(t *testing.T) {
+func TestFlag_GetUint8Slice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]uint8]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42|1"),
 			result[[]uint8]{
 				ptrTo([]uint8{42, 1}),
@@ -1811,7 +1810,7 @@ func TestFlagSet_GetUint8Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]uint8]{
 				ptrTo([]uint8{42, 1}),
@@ -1820,7 +1819,7 @@ func TestFlagSet_GetUint8Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]uint8{42, 1})},
+			[]Option{DefaultValue([]uint8{42, 1})},
 			nil,
 			result[[]uint8]{
 				ptrTo([]uint8{42, 1}),
@@ -1829,7 +1828,7 @@ func TestFlagSet_GetUint8Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]uint8]{
 				nil,
@@ -1839,32 +1838,32 @@ func TestFlagSet_GetUint8Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint8Slice(tt.name, tt.opts...)
-			assertGetFlag[[]uint8](t, fs, tt, fs.GetUint8Slice, fs.GetUint8SlicePtr)
+
+			f := NewUint8Slice(tt.name, tt.opts...)
+			assertGetFlag[[]uint8](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Uint16Slice(t *testing.T) {
+func TestFlag_Uint16Slice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]uint16{42})},
+			[]Option{DefaultValue([]uint16{42})},
 			expected{defaultValue: []uint16{42}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1875,19 +1874,19 @@ func TestFlagSet_Uint16Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint16Slice(tt.name, tt.opts...)
-			assertFlag[[]uint16](t, fs, tt)
+
+			f := NewUint16Slice(tt.name, tt.opts...)
+			assertFlag[[]uint16](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetUint16Slice(t *testing.T) {
+func TestFlag_GetUint16Slice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]uint16]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42|1"),
 			result[[]uint16]{
 				ptrTo([]uint16{42, 1}),
@@ -1896,7 +1895,7 @@ func TestFlagSet_GetUint16Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]uint16]{
 				ptrTo([]uint16{42, 1}),
@@ -1905,7 +1904,7 @@ func TestFlagSet_GetUint16Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]uint16{42, 1})},
+			[]Option{DefaultValue([]uint16{42, 1})},
 			nil,
 			result[[]uint16]{
 				ptrTo([]uint16{42, 1}),
@@ -1914,7 +1913,7 @@ func TestFlagSet_GetUint16Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]uint16]{
 				nil,
@@ -1924,32 +1923,32 @@ func TestFlagSet_GetUint16Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint16Slice(tt.name, tt.opts...)
-			assertGetFlag[[]uint16](t, fs, tt, fs.GetUint16Slice, fs.GetUint16SlicePtr)
+
+			f := NewUint16Slice(tt.name, tt.opts...)
+			assertGetFlag[[]uint16](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Uint32Slice(t *testing.T) {
+func TestFlag_Uint32Slice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]uint32{42})},
+			[]Option{DefaultValue([]uint32{42})},
 			expected{defaultValue: []uint32{42}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -1960,19 +1959,19 @@ func TestFlagSet_Uint32Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint32Slice(tt.name, tt.opts...)
-			assertFlag[[]uint32](t, fs, tt)
+
+			f := NewUint32Slice(tt.name, tt.opts...)
+			assertFlag[[]uint32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetUint32Slice(t *testing.T) {
+func TestFlag_GetUint32Slice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]uint32]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42|1"),
 			result[[]uint32]{
 				ptrTo([]uint32{42, 1}),
@@ -1981,7 +1980,7 @@ func TestFlagSet_GetUint32Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]uint32]{
 				ptrTo([]uint32{42, 1}),
@@ -1990,7 +1989,7 @@ func TestFlagSet_GetUint32Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]uint32{42, 1})},
+			[]Option{DefaultValue([]uint32{42, 1})},
 			nil,
 			result[[]uint32]{
 				ptrTo([]uint32{42, 1}),
@@ -1999,7 +1998,7 @@ func TestFlagSet_GetUint32Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]uint32]{
 				nil,
@@ -2009,32 +2008,32 @@ func TestFlagSet_GetUint32Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint32Slice(tt.name, tt.opts...)
-			assertGetFlag[[]uint32](t, fs, tt, fs.GetUint32Slice, fs.GetUint32SlicePtr)
+
+			f := NewUint32Slice(tt.name, tt.opts...)
+			assertGetFlag[[]uint32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Uint64Slice(t *testing.T) {
+func TestFlag_Uint64Slice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]uint64{42})},
+			[]Option{DefaultValue([]uint64{42})},
 			expected{defaultValue: []uint64{42}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -2045,19 +2044,19 @@ func TestFlagSet_Uint64Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint64Slice(tt.name, tt.opts...)
-			assertFlag[[]uint64](t, fs, tt)
+
+			f := NewUint64Slice(tt.name, tt.opts...)
+			assertFlag[[]uint64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetUint64Slice(t *testing.T) {
+func TestFlag_GetUint64Slice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]uint64]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42|1"),
 			result[[]uint64]{
 				ptrTo([]uint64{42, 1}),
@@ -2066,7 +2065,7 @@ func TestFlagSet_GetUint64Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]uint64]{
 				ptrTo([]uint64{42, 1}),
@@ -2075,7 +2074,7 @@ func TestFlagSet_GetUint64Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]uint64{42, 1})},
+			[]Option{DefaultValue([]uint64{42, 1})},
 			nil,
 			result[[]uint64]{
 				ptrTo([]uint64{42, 1}),
@@ -2084,7 +2083,7 @@ func TestFlagSet_GetUint64Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]uint64]{
 				nil,
@@ -2094,32 +2093,32 @@ func TestFlagSet_GetUint64Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Uint64Slice(tt.name, tt.opts...)
-			assertGetFlag[[]uint64](t, fs, tt, fs.GetUint64Slice, fs.GetUint64SlicePtr)
+
+			f := NewUint64Slice(tt.name, tt.opts...)
+			assertGetFlag[[]uint64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Float32Slice(t *testing.T) {
+func TestFlag_Float32Slice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]float32{42.0})},
+			[]Option{DefaultValue([]float32{42.0})},
 			expected{defaultValue: []float32{42.0}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -2130,19 +2129,19 @@ func TestFlagSet_Float32Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Float32Slice(tt.name, tt.opts...)
-			assertFlag[[]float32](t, fs, tt)
+
+			f := NewFloat32Slice(tt.name, tt.opts...)
+			assertFlag[[]float32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetFloat32Slice(t *testing.T) {
+func TestFlag_GetFloat32Slice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]float32]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42.0|2.7|3.14"),
 			result[[]float32]{
 				ptrTo([]float32{42.0, 2.7, 3.14}),
@@ -2151,7 +2150,7 @@ func TestFlagSet_GetFloat32Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42.0,2.7"),
 			result[[]float32]{
 				ptrTo([]float32{42.0, 2.7}),
@@ -2160,7 +2159,7 @@ func TestFlagSet_GetFloat32Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]float32{42.0, 2.7})},
+			[]Option{DefaultValue([]float32{42.0, 2.7})},
 			nil,
 			result[[]float32]{
 				ptrTo([]float32{42.0, 2.7}),
@@ -2169,7 +2168,7 @@ func TestFlagSet_GetFloat32Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]float32]{
 				nil,
@@ -2179,32 +2178,32 @@ func TestFlagSet_GetFloat32Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Float32Slice(tt.name, tt.opts...)
-			assertGetFlag[[]float32](t, fs, tt, fs.GetFloat32Slice, fs.GetFloat32SlicePtr)
+
+			f := NewFloat32Slice(tt.name, tt.opts...)
+			assertGetFlag[[]float32](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Float64Slice(t *testing.T) {
+func TestFlag_Float64Slice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]float64{42.0})},
+			[]Option{DefaultValue([]float64{42.0})},
 			expected{defaultValue: []float64{42.0}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -2215,19 +2214,19 @@ func TestFlagSet_Float64Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Float64Slice(tt.name, tt.opts...)
-			assertFlag[[]float64](t, fs, tt)
+
+			f := NewFloat64Slice(tt.name, tt.opts...)
+			assertFlag[[]float64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetFloat64Slice(t *testing.T) {
+func TestFlag_GetFloat64Slice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]float64]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42.0|2.7|3.14"),
 			result[[]float64]{
 				ptrTo([]float64{42.0, 2.7, 3.14}),
@@ -2236,7 +2235,7 @@ func TestFlagSet_GetFloat64Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42.0,2.7"),
 			result[[]float64]{
 				ptrTo([]float64{42.0, 2.7}),
@@ -2245,7 +2244,7 @@ func TestFlagSet_GetFloat64Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]float64{42.0, 2.7})},
+			[]Option{DefaultValue([]float64{42.0, 2.7})},
 			nil,
 			result[[]float64]{
 				ptrTo([]float64{42.0, 2.7}),
@@ -2254,7 +2253,7 @@ func TestFlagSet_GetFloat64Slice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]float64]{
 				nil,
@@ -2264,32 +2263,32 @@ func TestFlagSet_GetFloat64Slice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Float64Slice(tt.name, tt.opts...)
-			assertGetFlag[[]float64](t, fs, tt, fs.GetFloat64Slice, fs.GetFloat64SlicePtr)
+
+			f := NewFloat64Slice(tt.name, tt.opts...)
+			assertGetFlag[[]float64](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_StringSlice(t *testing.T) {
+func TestFlag_StringSlice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]string{"foo", "bar"})},
+			[]Option{DefaultValue([]string{"foo", "bar"})},
 			expected{defaultValue: []string{"foo", "bar"}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -2300,19 +2299,19 @@ func TestFlagSet_StringSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.StringSlice(tt.name, tt.opts...)
-			assertFlag[[]string](t, fs, tt)
+
+			f := NewStringSlice(tt.name, tt.opts...)
+			assertFlag[[]string](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetStringSlice(t *testing.T) {
+func TestFlag_GetStringSlice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]string]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("foo|bar"),
 			result[[]string]{
 				ptrTo([]string{"foo", "bar"}),
@@ -2321,7 +2320,7 @@ func TestFlagSet_GetStringSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42,1"),
 			result[[]string]{
 				ptrTo([]string{"42", "1"}),
@@ -2330,7 +2329,7 @@ func TestFlagSet_GetStringSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]string{"foo", "bar"})},
+			[]Option{DefaultValue([]string{"foo", "bar"})},
 			nil,
 			result[[]string]{
 				ptrTo([]string{"foo", "bar"}),
@@ -2340,32 +2339,32 @@ func TestFlagSet_GetStringSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.StringSlice(tt.name, tt.opts...)
-			assertGetFlag[[]string](t, fs, tt, fs.GetStringSlice, fs.GetStringSlicePtr)
+
+			f := NewStringSlice(tt.name, tt.opts...)
+			assertGetFlag[[]string](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_DurationSlice(t *testing.T) {
+func TestFlag_DurationSlice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]time.Duration{time.Minute})},
+			[]Option{DefaultValue([]time.Duration{time.Minute})},
 			expected{defaultValue: []time.Duration{time.Minute}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -2376,19 +2375,19 @@ func TestFlagSet_DurationSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.DurationSlice(tt.name, tt.opts...)
-			assertFlag[[]time.Duration](t, fs, tt)
+
+			f := NewDurationSlice(tt.name, tt.opts...)
+			assertFlag[[]time.Duration](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetDurationSlice(t *testing.T) {
+func TestFlag_GetDurationSlice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]time.Duration]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("42s|1m"),
 			result[[]time.Duration]{
 				ptrTo([]time.Duration{time.Second * 42, time.Minute}),
@@ -2397,7 +2396,7 @@ func TestFlagSet_GetDurationSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("42s,1m"),
 			result[[]time.Duration]{
 				ptrTo([]time.Duration{time.Second * 42, time.Minute}),
@@ -2406,7 +2405,7 @@ func TestFlagSet_GetDurationSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]time.Duration{time.Second * 42})},
+			[]Option{DefaultValue([]time.Duration{time.Second * 42})},
 			nil,
 			result[[]time.Duration]{
 				ptrTo([]time.Duration{time.Second * 42}),
@@ -2415,7 +2414,7 @@ func TestFlagSet_GetDurationSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("invalid"),
 			result[[]time.Duration]{
 				nil,
@@ -2425,32 +2424,32 @@ func TestFlagSet_GetDurationSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.DurationSlice(tt.name, tt.opts...)
-			assertGetFlag[[]time.Duration](t, fs, tt, fs.GetDurationSlice, fs.GetDurationSlicePtr)
+
+			f := NewDurationSlice(tt.name, tt.opts...)
+			assertGetFlag[[]time.Duration](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_BoolSlice(t *testing.T) {
+func TestFlag_BoolSlice(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			expected{
 				separator: "|",
 			},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]bool{true, false})},
+			[]Option{DefaultValue([]bool{true, false})},
 			expected{defaultValue: []bool{true, false}},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
+			[]Option{
+				Description("description"),
 			},
 			expected{
 				description: "description",
@@ -2461,19 +2460,19 @@ func TestFlagSet_BoolSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.BoolSlice(tt.name, tt.opts...)
-			assertFlag[[]bool](t, fs, tt)
+
+			f := NewBoolSlice(tt.name, tt.opts...)
+			assertFlag[[]bool](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetBoolSlice(t *testing.T) {
+func TestFlag_GetBoolSlice(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[[]bool]{
 		{
 			"sample",
-			[]options.FlagOption{options.Separator("|")},
+			[]Option{Separator("|")},
 			ptrTo("t|f"),
 			result[[]bool]{
 				ptrTo([]bool{true, false}),
@@ -2482,7 +2481,7 @@ func TestFlagSet_GetBoolSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("F,true"),
 			result[[]bool]{
 				ptrTo([]bool{false, true}),
@@ -2491,7 +2490,7 @@ func TestFlagSet_GetBoolSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue([]bool{false, false})},
+			[]Option{DefaultValue([]bool{false, false})},
 			nil,
 			result[[]bool]{
 				ptrTo([]bool{false, false}),
@@ -2500,7 +2499,7 @@ func TestFlagSet_GetBoolSlice(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo("no,no"),
 			result[[]bool]{
 				nil,
@@ -2510,33 +2509,33 @@ func TestFlagSet_GetBoolSlice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.BoolSlice(tt.name, tt.opts...)
-			assertGetFlag[[]bool](t, fs, tt, fs.GetBoolSlice, fs.GetBoolSlicePtr)
+
+			f := NewBoolSlice(tt.name, tt.opts...)
+			assertGetFlag[[]bool](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_Counter(t *testing.T) {
+func TestFlag_Counter(t *testing.T) {
 	t.Parallel()
 	tests := []flagTest{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			expected{},
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(5)},
-			expected{defaultValue: generic.NewCounter(5)},
+			[]Option{DefaultValue(5)},
+			expected{defaultValue: 5},
 		},
 		{
 			"sample",
-			[]options.FlagOption{
-				options.Description("description"),
-				options.Shorthand("s"),
-				options.Required(),
-				options.Shared(),
+			[]Option{
+				Description("description"),
+				Shorthand("s"),
+				Required(),
+				Shared(),
 			},
 			expected{
 				description: "description",
@@ -2548,19 +2547,19 @@ func TestFlagSet_Counter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Counter(tt.name, tt.opts...)
-			assertFlag[generic.Counter](t, fs, tt)
+
+			f := NewCounter(tt.name, tt.opts...)
+			assertFlag[int](t, f, tt)
 		})
 	}
 }
 
-func TestFlagSet_GetCounter(t *testing.T) {
+func TestFlag_GetCounter(t *testing.T) {
 	t.Parallel()
 	tests := []getFlagTest[int]{
 		{
 			"sample",
-			[]options.FlagOption{},
+			[]Option{},
 			ptrTo(""),
 			result[int]{
 				ptrTo(1),
@@ -2569,7 +2568,7 @@ func TestFlagSet_GetCounter(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(1)},
+			[]Option{DefaultValue(1)},
 			ptrTo(""),
 			result[int]{
 				ptrTo(2),
@@ -2578,7 +2577,7 @@ func TestFlagSet_GetCounter(t *testing.T) {
 		},
 		{
 			"sample",
-			[]options.FlagOption{options.DefaultValue(41)},
+			[]Option{DefaultValue(41)},
 			ptrTo(""),
 			result[int]{
 				ptrTo(42),
@@ -2588,9 +2587,9 @@ func TestFlagSet_GetCounter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := &FlagSet{}
-			fs.Counter(tt.name, tt.opts...)
-			assertGetFlag[int](t, fs, tt, fs.GetCounter, nil)
+
+			f := NewCounter(tt.name, tt.opts...)
+			assertGetFlag[int](t, f, tt)
 		})
 	}
 }
