@@ -19,7 +19,7 @@ func (f *Int64Slice) Parse(input string) error {
 		if err != nil {
 			return err
 		}
-		parsed = append(parsed, int64(v))
+		parsed = append(parsed, v)
 	}
 	f.value = &parsed
 	f.visited = true

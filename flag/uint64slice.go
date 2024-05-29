@@ -19,7 +19,7 @@ func (f *Uint64Slice) Parse(input string) error {
 		if err != nil {
 			return err
 		}
-		parsed = append(parsed, uint64(v))
+		parsed = append(parsed, v)
 	}
 	f.value = &parsed
 	f.visited = true

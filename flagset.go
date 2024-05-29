@@ -2,11 +2,12 @@ package helium
 
 import (
 	"fmt"
-	"github.com/brongineer/helium/flag"
 	"os"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/brongineer/helium/flag"
 )
 
 type flagPropertyGetter interface {
@@ -26,7 +27,6 @@ type FlagSet struct {
 }
 
 func (fs *FlagSet) Parse(args []string) error {
-
 	return nil
 }
 

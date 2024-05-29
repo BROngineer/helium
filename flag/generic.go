@@ -114,7 +114,7 @@ func (f *flag[T]) setDefaultValue(value any) {
 	var v T
 	switch any(v).(type) {
 	case T:
-		v = value.(T)
+		v, _ = value.(T)
 	default:
 		_, _ = fmt.Fprintf(os.Stderr, "Error: wrong type for default value: got %T, wanted %T\n", value, v)
 		os.Exit(1)
