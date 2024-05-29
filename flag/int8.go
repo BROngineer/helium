@@ -1,6 +1,9 @@
 package flag
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
 
 type fint8 = flag[int8]
 
@@ -9,6 +12,13 @@ type Int8 struct {
 }
 
 func (f *Int8) Parse(input string) error {
+	if f.IsVisited() {
+		return fmt.Errorf("flag already parsed")
+	}
+	var empty string
+	if input == empty {
+		return fmt.Errorf("no value provided")
+	}
 	parsed, err := strconv.ParseInt(input, 10, 8)
 	if err != nil {
 		return err

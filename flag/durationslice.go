@@ -1,6 +1,7 @@
 package flag
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
@@ -12,6 +13,10 @@ type DurationSlice struct {
 }
 
 func (f *DurationSlice) Parse(input string) error {
+	var empty string
+	if input == empty {
+		return fmt.Errorf("no value provided")
+	}
 	s := strings.Split(input, f.Separator())
 	parsed := make([]time.Duration, 0, len(s))
 	for _, el := range s {
@@ -20,6 +25,10 @@ func (f *DurationSlice) Parse(input string) error {
 			return err
 		}
 		parsed = append(parsed, v)
+	}
+	if f.IsVisited() {
+		stored := *f.Value().(*[]time.Duration)
+		parsed = append(stored, parsed...)
 	}
 	f.value = &parsed
 	f.visited = true

@@ -1,6 +1,7 @@
 package flag
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -12,6 +13,10 @@ type Uint32Slice struct {
 }
 
 func (f *Uint32Slice) Parse(input string) error {
+	var empty string
+	if input == empty {
+		return fmt.Errorf("no value provided")
+	}
 	s := strings.Split(input, f.Separator())
 	parsed := make([]uint32, 0, len(s))
 	for _, el := range s {
@@ -20,6 +25,10 @@ func (f *Uint32Slice) Parse(input string) error {
 			return err
 		}
 		parsed = append(parsed, uint32(v))
+	}
+	if f.IsVisited() {
+		stored := *f.Value().(*[]uint32)
+		parsed = append(stored, parsed...)
 	}
 	f.value = &parsed
 	f.visited = true

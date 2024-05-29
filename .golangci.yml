@@ -41,3 +41,4 @@ issues:
       linters:
         - dupl
         - funlen
+        - gocyclo

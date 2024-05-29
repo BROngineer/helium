@@ -1,6 +1,9 @@
 package flag
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
 
 type fint64 = flag[int64]
 
@@ -9,6 +12,13 @@ type Int64 struct {
 }
 
 func (f *Int64) Parse(input string) error {
+	if f.IsVisited() {
+		return fmt.Errorf("flag already parsed")
+	}
+	var empty string
+	if input == empty {
+		return fmt.Errorf("no value provided")
+	}
 	v, err := strconv.ParseInt(input, 10, 64)
 	if err != nil {
 		return err

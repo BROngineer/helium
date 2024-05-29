@@ -10,6 +10,11 @@ import (
 	"github.com/brongineer/helium/flag"
 )
 
+const (
+	longFlagNamePrefix  = "--"
+	shortFlagNamePrefix = "-"
+)
+
 type flagPropertyGetter interface {
 	Value() any
 	Name() string
@@ -27,7 +32,92 @@ type FlagSet struct {
 }
 
 func (fs *FlagSet) Parse(args []string) error {
+	var (
+		i   int
+		err error
+	)
+
+	for i = 0; i < len(args); {
+		switch {
+		case strings.HasPrefix(args[i], longFlagNamePrefix):
+			i, err = fs.parseLong(args, i)
+		case strings.HasPrefix(args[i], shortFlagNamePrefix):
+			i, err = fs.parseShort(args, i)
+		}
+		if err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func (fs *FlagSet) parseLong(args []string, i int) (int, error) {
+	trimmed := strings.TrimPrefix(args[i], longFlagNamePrefix)
+	f := fs.flagByName(trimmed)
+	if f == nil {
+		return -1, fmt.Errorf("unknown flag: %s", trimmed)
+	}
+	return fs.parse(f, i, args)
+}
+
+func (fs *FlagSet) parseShort(args []string, i int) (int, error) {
+	trimmed := strings.TrimPrefix(args[i], shortFlagNamePrefix)
+	if len(trimmed) > 1 {
+		stacked := strings.Split(trimmed, "")
+		if err := fs.parseStacked(stacked[:len(stacked)-1]); err != nil {
+			return -1, err
+		}
+		trimmed = stacked[len(stacked)-1]
+	}
+	f := fs.flagByShorthand(trimmed)
+	if f == nil {
+		return -1, fmt.Errorf("unknown shorthand: %s", trimmed)
+	}
+	return fs.parse(f, i, args)
+}
+
+func (fs *FlagSet) parse(f flagPropertyGetter, i int, args []string) (int, error) {
+	idx := nextFlagIndex(i+1, args)
+	if idx > -1 {
+		v := strings.Join(args[i+1:idx], f.Separator())
+		if err := f.Parse(v); err != nil {
+			return -1, err
+		}
+		return idx, nil
+	}
+	if i == len(args)-1 {
+		if err := f.Parse(""); err != nil {
+			return -1, err
+		}
+		return len(args), nil
+	}
+	v := strings.Join(args[i+1:], f.Separator())
+	return len(args), f.Parse(v)
+}
+
+func (fs *FlagSet) parseStacked(stacked []string) error {
+	for _, s := range stacked {
+		f := fs.flagByShorthand(s)
+		if f == nil {
+			return fmt.Errorf("unknown shorthand: %s", s)
+		}
+		if err := f.Parse(""); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func nextFlagIndex(start int, args []string) int {
+	for i := start; i < len(args); i++ {
+		if strings.HasPrefix(args[i], longFlagNamePrefix) {
+			return i
+		}
+		if strings.HasPrefix(args[i], shortFlagNamePrefix) {
+			return i
+		}
+	}
+	return -1
 }
 
 func (fs *FlagSet) flagByName(name string) flagPropertyGetter {
@@ -51,26 +141,18 @@ func (fs *FlagSet) flagByShorthand(shorthand string) flagPropertyGetter {
 }
 
 func (fs *FlagSet) addFlag(f flagPropertyGetter) {
-	var fl flagPropertyGetter
-	fl = fs.flagByName(f.Name())
-	if fl != nil {
+	if fl := fs.flagByName(f.Name()); fl != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "flag \"%s\" already defined\n", f.Name())
 		os.Exit(1)
 	}
-	switch {
-	case f.Shorthand() != "":
-		fl = fs.flagByShorthand(f.Shorthand())
-		if fl != nil {
-			_, _ = fmt.Fprintf(os.Stderr, "flag with shorthand \"%s\" already defined\n", f.Shorthand())
-			os.Exit(1)
-		}
-		fallthrough
-	default:
-		set := make([]flagPropertyGetter, len(fs.flags)+1)
-		copy(set, fs.flags)
-		set[len(fs.flags)] = f
-		fs.flags = set
+	if f.Shorthand() != "" && fs.flagByShorthand(f.Shorthand()) != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "flag with shorthand \"%s\" already defined\n", f.Shorthand())
+		os.Exit(1)
 	}
+	set := make([]flagPropertyGetter, len(fs.flags)+1)
+	copy(set, fs.flags)
+	set[len(fs.flags)] = f
+	fs.flags = set
 }
 
 // String creates a new string flag with the specified name and options.

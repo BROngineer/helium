@@ -1,6 +1,9 @@
 package flag
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
 
 type ffloat32 = flag[float32]
 
@@ -9,6 +12,13 @@ type Float32 struct {
 }
 
 func (f *Float32) Parse(input string) error {
+	if f.IsVisited() {
+		return fmt.Errorf("flag already parsed")
+	}
+	var empty string
+	if input == empty {
+		return fmt.Errorf("no value provided")
+	}
 	parsed, err := strconv.ParseFloat(input, 32)
 	if err != nil {
 		return err

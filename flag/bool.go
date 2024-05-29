@@ -1,6 +1,9 @@
 package flag
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
 
 type fbool = flag[bool]
 
@@ -13,6 +16,9 @@ func (f *Bool) Parse(input string) error {
 		v   bool
 		err error
 	)
+	if f.IsVisited() {
+		return fmt.Errorf("flag already parsed")
+	}
 	switch input {
 	case "":
 		v = true

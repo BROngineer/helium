@@ -1,6 +1,9 @@
 package flag
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type duration = flag[time.Duration]
 
@@ -9,6 +12,13 @@ type Duration struct {
 }
 
 func (f *Duration) Parse(input string) error {
+	if f.IsVisited() {
+		return fmt.Errorf("flag already parsed")
+	}
+	var empty string
+	if input == empty {
+		return fmt.Errorf("no value provided")
+	}
 	v, err := time.ParseDuration(input)
 	if err != nil {
 		return err
