@@ -112,11 +112,11 @@ func (f *flag[T]) setShared() {
 
 func (f *flag[T]) setDefaultValue(value any) {
 	var v T
-	switch any(v).(type) {
+	switch value.(type) {
 	case T:
 		v, _ = value.(T)
 	default:
-		_, _ = fmt.Fprintf(os.Stderr, "Error: wrong type for default value: got %T, wanted %T\n", value, v)
+		_, _ = fmt.Fprintf(os.Stderr, "Error: wrong type for default value: wanted %T, got %T\n", v, value)
 		os.Exit(1)
 	}
 	f.defaultValue = &v
