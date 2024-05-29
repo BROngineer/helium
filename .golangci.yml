@@ -1,0 +1,36 @@
+run:
+  timeout: 5m
+severity:
+  default-severity: warning
+linters:
+  enable:
+    - asciicheck
+    - dogsled
+    - dupl
+    - durationcheck
+    - errcheck
+    - exportloopref
+    - forcetypeassert
+    - goconst
+    - gocyclo
+    - godot
+    - gofmt
+    - goimports
+    - goprintffuncname
+    - gosimple
+    - govet
+    - importas
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - paralleltest
+    - prealloc
+    - predeclared
+    - staticcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
