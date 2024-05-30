@@ -1,8 +1,9 @@
 package flag
 
 import (
-	"fmt"
 	"strconv"
+
+	"github.com/brongineer/helium/errors"
 )
 
 type ffloat64 = flag[float64]
@@ -13,15 +14,15 @@ type Float64 struct {
 
 func (f *Float64) Parse(input string) error {
 	if f.IsVisited() {
-		return fmt.Errorf("flag already parsed")
+		return errors.FlagVisited(f.Name())
 	}
 	var empty string
 	if input == empty {
-		return fmt.Errorf("no value provided")
+		return errors.NoValueProvided(f.Name())
 	}
 	v, err := strconv.ParseFloat(input, 64)
 	if err != nil {
-		return err
+		return errors.ParseError(f.Name(), err)
 	}
 	f.value = &v
 	f.visited = true

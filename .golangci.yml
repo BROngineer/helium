@@ -6,7 +6,6 @@ linters:
   enable:
     - asciicheck
     - dogsled
-    - dupl
     - durationcheck
     - errcheck
     - exportloopref
@@ -39,6 +38,6 @@ issues:
   exclude-rules:
     - path: _test\.go
       linters:
-        - dupl
         - funlen
         - gocyclo
+        - lll

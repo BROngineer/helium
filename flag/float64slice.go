@@ -1,9 +1,10 @@
 package flag
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/brongineer/helium/errors"
 )
 
 type float64Slice = flag[[]float64]
@@ -15,19 +16,19 @@ type Float64Slice struct {
 func (f *Float64Slice) Parse(input string) error {
 	var empty string
 	if input == empty {
-		return fmt.Errorf("no value provided")
+		return errors.NoValueProvided(f.Name())
 	}
 	s := strings.Split(input, f.Separator())
 	parsed := make([]float64, 0, len(s))
 	for _, el := range s {
 		v, err := strconv.ParseFloat(el, 64)
 		if err != nil {
-			return err
+			return errors.ParseError(f.Name(), err)
 		}
 		parsed = append(parsed, v)
 	}
 	if f.IsVisited() {
-		stored := *f.Value().(*[]float64)
+		stored := DerefOrDie[[]float64](f.Value())
 		parsed = append(stored, parsed...)
 	}
 	f.value = &parsed

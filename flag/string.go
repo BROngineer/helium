@@ -1,6 +1,8 @@
 package flag
 
-import "fmt"
+import (
+	"github.com/brongineer/helium/errors"
+)
 
 type fstring = flag[string]
 
@@ -10,11 +12,11 @@ type String struct {
 
 func (f *String) Parse(input string) error {
 	if f.IsVisited() {
-		return fmt.Errorf("flag already parsed")
+		return errors.FlagVisited(f.Name())
 	}
 	var empty string
 	if input == empty {
-		return fmt.Errorf("no value provided")
+		return errors.NoValueProvided(f.Name())
 	}
 	f.value = &input
 	f.visited = true

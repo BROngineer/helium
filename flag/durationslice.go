@@ -1,9 +1,10 @@
 package flag
 
 import (
-	"fmt"
 	"strings"
 	"time"
+
+	"github.com/brongineer/helium/errors"
 )
 
 type durationSlice = flag[[]time.Duration]
@@ -15,19 +16,19 @@ type DurationSlice struct {
 func (f *DurationSlice) Parse(input string) error {
 	var empty string
 	if input == empty {
-		return fmt.Errorf("no value provided")
+		return errors.NoValueProvided(f.Name())
 	}
 	s := strings.Split(input, f.Separator())
 	parsed := make([]time.Duration, 0, len(s))
 	for _, el := range s {
 		v, err := time.ParseDuration(el)
 		if err != nil {
-			return err
+			return errors.ParseError(f.Name(), err)
 		}
 		parsed = append(parsed, v)
 	}
 	if f.IsVisited() {
-		stored := *f.Value().(*[]time.Duration)
+		stored := DerefOrDie[[]time.Duration](f.Value())
 		parsed = append(stored, parsed...)
 	}
 	f.value = &parsed

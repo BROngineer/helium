@@ -1,8 +1,9 @@
 package flag
 
 import (
-	"fmt"
 	"strconv"
+
+	"github.com/brongineer/helium/errors"
 )
 
 type fuint16 = flag[uint16]
@@ -13,15 +14,15 @@ type Uint16 struct {
 
 func (f *Uint16) Parse(input string) error {
 	if f.IsVisited() {
-		return fmt.Errorf("flag already parsed")
+		return errors.FlagVisited(f.Name())
 	}
 	var empty string
 	if input == empty {
-		return fmt.Errorf("no value provided")
+		return errors.NoValueProvided(f.Name())
 	}
 	parsed, err := strconv.ParseUint(input, 10, 16)
 	if err != nil {
-		return err
+		return errors.ParseError(f.Name(), err)
 	}
 	v := uint16(parsed)
 	f.value = &v

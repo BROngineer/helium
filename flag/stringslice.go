@@ -1,8 +1,9 @@
 package flag
 
 import (
-	"fmt"
 	"strings"
+
+	"github.com/brongineer/helium/errors"
 )
 
 type stringSlice = flag[[]string]
@@ -14,11 +15,11 @@ type StringSlice struct {
 func (f *StringSlice) Parse(input string) error {
 	var empty string
 	if input == empty {
-		return fmt.Errorf("no value provided")
+		return errors.NoValueProvided(f.Name())
 	}
 	v := strings.Split(input, f.Separator())
 	if f.IsVisited() {
-		stored := *f.Value().(*[]string)
+		stored := DerefOrDie[[]string](f.Value())
 		v = append(stored, v...)
 	}
 	f.value = &v

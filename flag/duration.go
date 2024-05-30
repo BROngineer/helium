@@ -1,8 +1,9 @@
 package flag
 
 import (
-	"fmt"
 	"time"
+
+	"github.com/brongineer/helium/errors"
 )
 
 type duration = flag[time.Duration]
@@ -13,15 +14,15 @@ type Duration struct {
 
 func (f *Duration) Parse(input string) error {
 	if f.IsVisited() {
-		return fmt.Errorf("flag already parsed")
+		return errors.FlagVisited(f.Name())
 	}
 	var empty string
 	if input == empty {
-		return fmt.Errorf("no value provided")
+		return errors.NoValueProvided(f.Name())
 	}
 	v, err := time.ParseDuration(input)
 	if err != nil {
-		return err
+		return errors.ParseError(f.Name(), err)
 	}
 	f.value = &v
 	f.visited = true

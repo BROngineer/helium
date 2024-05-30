@@ -1,8 +1,9 @@
 package flag
 
 import (
-	"fmt"
 	"strconv"
+
+	"github.com/brongineer/helium/errors"
 )
 
 type fint32 = flag[int32]
@@ -13,15 +14,15 @@ type Int32 struct {
 
 func (f *Int32) Parse(input string) error {
 	if f.IsVisited() {
-		return fmt.Errorf("flag already parsed")
+		return errors.FlagVisited(f.Name())
 	}
 	var empty string
 	if input == empty {
-		return fmt.Errorf("no value provided")
+		return errors.NoValueProvided(f.Name())
 	}
 	parsed, err := strconv.ParseInt(input, 10, 32)
 	if err != nil {
-		return err
+		return errors.ParseError(f.Name(), err)
 	}
 	v := int32(parsed)
 	f.value = &v

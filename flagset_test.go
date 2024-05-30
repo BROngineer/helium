@@ -1,9 +1,11 @@
 package helium
 
 import (
+	"errors"
 	"testing"
 	"time"
 
+	ferrors "github.com/brongineer/helium/errors"
 	"github.com/brongineer/helium/flag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -206,8 +208,9 @@ type result struct {
 }
 
 type expected struct {
-	parsed []result
-	err    bool
+	parsed      []result
+	err         bool
+	expectedErr error
 }
 
 type flagSetTest struct {
@@ -246,8 +249,9 @@ func TestFlagSet_Parse(t *testing.T) {
 				return fs
 			},
 			expected: expected{
-				parsed: []result{},
-				err:    true,
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrNoValueProvided,
 			},
 			input: []string{"--sample-string", "--sample-bool"},
 		},
@@ -317,8 +321,9 @@ func TestFlagSet_Parse(t *testing.T) {
 				return fs
 			},
 			expected: expected{
-				parsed: []result{},
-				err:    true,
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrFlagVisited,
 			},
 			input: []string{"--sample-string", "foo", "--sample-bool", "--sample-string", "bar"},
 		},
@@ -347,8 +352,9 @@ func TestFlagSet_Parse(t *testing.T) {
 				return fs
 			},
 			expected: expected{
-				parsed: []result{},
-				err:    true,
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrUnknownFlag,
 			},
 			input: []string{"--sample"},
 		},
@@ -360,8 +366,9 @@ func TestFlagSet_Parse(t *testing.T) {
 				return fs
 			},
 			expected: expected{
-				parsed: []result{},
-				err:    true,
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrUnknownShorthand,
 			},
 			input: []string{"-v"},
 		},
@@ -373,8 +380,9 @@ func TestFlagSet_Parse(t *testing.T) {
 				return fs
 			},
 			expected: expected{
-				parsed: []result{},
-				err:    true,
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrUnknownShorthand,
 			},
 			input: []string{"-vvs"},
 		},
@@ -386,8 +394,9 @@ func TestFlagSet_Parse(t *testing.T) {
 				return fs
 			},
 			expected: expected{
-				parsed: []result{},
-				err:    true,
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrNoValueProvided,
 			},
 			input: []string{"-sss"},
 		},
@@ -399,8 +408,9 @@ func TestFlagSet_Parse(t *testing.T) {
 				return fs
 			},
 			expected: expected{
-				parsed: []result{},
-				err:    true,
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrNoValueProvided,
 			},
 			input: []string{"--sample-string"},
 		},
@@ -553,6 +563,29 @@ func TestFlagSet_Parse(t *testing.T) {
 				"--sample-duration-slice", "1s", "2h",
 			},
 		},
+		{
+			name: "flagset validation error",
+			flagSet: func() *FlagSet {
+				fs := &FlagSet{}
+				fs.Duration("sample-duration", flag.Shorthand("a"))
+				fs.StringSlice("sample-string", flag.Shorthand("b"), flag.Separator(";"), flag.Required())
+				fs.DurationSlice("sample-duration-slice", flag.Shorthand("c"), flag.Separator(" "))
+				return fs
+			},
+			expected: expected{
+				parsed: []result{
+					{flagName: "sample-duration", flagValue: time.Minute * 15, flagType: "duration"},
+					{flagName: "sample-string", flagValue: []string{"foo", "bar"}, flagType: "stringSlice"},
+					{flagName: "sample-duration-slice", flagValue: []time.Duration{time.Second, time.Hour * 2}, flagType: "durationSlice"},
+				},
+				err:         true,
+				expectedErr: ferrors.ErrNoValueProvided,
+			},
+			input: []string{
+				"--sample-duration", "15m",
+				"--sample-duration-slice", "1s", "2h",
+			},
+		},
 	}
 
 	for _, tc := range tests {
@@ -563,6 +596,7 @@ func TestFlagSet_Parse(t *testing.T) {
 			err := fs.Parse(tt.input)
 			if tt.expected.err {
 				require.Error(t, err)
+				assert.True(t, errors.Is(err, tt.expected.expectedErr))
 				return
 			}
 			assert.NoError(t, err)

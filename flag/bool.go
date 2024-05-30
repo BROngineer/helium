@@ -1,8 +1,9 @@
 package flag
 
 import (
-	"fmt"
 	"strconv"
+
+	"github.com/brongineer/helium/errors"
 )
 
 type fbool = flag[bool]
@@ -17,7 +18,7 @@ func (f *Bool) Parse(input string) error {
 		err error
 	)
 	if f.IsVisited() {
-		return fmt.Errorf("flag already parsed")
+		return errors.FlagVisited(f.Name())
 	}
 	switch input {
 	case "":
@@ -25,7 +26,7 @@ func (f *Bool) Parse(input string) error {
 	default:
 		v, err = strconv.ParseBool(input)
 		if err != nil {
-			return err
+			return errors.ParseError(f.Name(), err)
 		}
 	}
 	f.value = &v

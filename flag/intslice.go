@@ -1,9 +1,10 @@
 package flag
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/brongineer/helium/errors"
 )
 
 type intSlice = flag[[]int]
@@ -15,19 +16,19 @@ type IntSlice struct {
 func (f *IntSlice) Parse(input string) error {
 	var empty string
 	if input == empty {
-		return fmt.Errorf("no value provided")
+		return errors.NoValueProvided(f.Name())
 	}
 	s := strings.Split(input, f.Separator())
 	parsed := make([]int, 0, len(s))
 	for _, el := range s {
 		v, err := strconv.Atoi(el)
 		if err != nil {
-			return err
+			return errors.ParseError(f.Name(), err)
 		}
 		parsed = append(parsed, v)
 	}
 	if f.IsVisited() {
-		stored := *f.Value().(*[]int)
+		stored := DerefOrDie[[]int](f.Value())
 		parsed = append(stored, parsed...)
 	}
 	f.value = &parsed

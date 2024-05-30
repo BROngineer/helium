@@ -1,12 +1,14 @@
 package helium
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"slices"
 	"strings"
 	"time"
 
+	ferrors "github.com/brongineer/helium/errors"
 	"github.com/brongineer/helium/flag"
 )
 
@@ -48,14 +50,30 @@ func (fs *FlagSet) Parse(args []string) error {
 			return err
 		}
 	}
+	if err = fs.validateValuesSet(); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (fs *FlagSet) validateValuesSet() error {
+	var err error
+	for _, f := range fs.flags {
+		if f.IsVisited() {
+			continue
+		}
+		if f.IsRequired() {
+			err = errors.Join(ferrors.NoValueProvided(f.Name()))
+		}
+	}
+	return err
 }
 
 func (fs *FlagSet) parseLong(args []string, i int) (int, error) {
 	trimmed := strings.TrimPrefix(args[i], longFlagNamePrefix)
 	f := fs.flagByName(trimmed)
 	if f == nil {
-		return -1, fmt.Errorf("unknown flag: %s", trimmed)
+		return -1, ferrors.UnknownFlag(trimmed)
 	}
 	return fs.parse(f, i, args)
 }
@@ -71,7 +89,7 @@ func (fs *FlagSet) parseShort(args []string, i int) (int, error) {
 	}
 	f := fs.flagByShorthand(trimmed)
 	if f == nil {
-		return -1, fmt.Errorf("unknown shorthand: %s", trimmed)
+		return -1, ferrors.UnknownShorthand(trimmed)
 	}
 	return fs.parse(f, i, args)
 }
@@ -99,7 +117,7 @@ func (fs *FlagSet) parseStacked(stacked []string) error {
 	for _, s := range stacked {
 		f := fs.flagByShorthand(s)
 		if f == nil {
-			return fmt.Errorf("unknown shorthand: %s", s)
+			return ferrors.UnknownShorthand(s)
 		}
 		if err := f.Parse(""); err != nil {
 			return err

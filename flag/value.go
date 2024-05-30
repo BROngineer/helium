@@ -3,6 +3,8 @@ package flag
 import (
 	"fmt"
 	"os"
+
+	"github.com/brongineer/helium/errors"
 )
 
 // value returns a pointer to the value of the specified flag in the given FlagSet.
@@ -18,7 +20,7 @@ func value[T allowed](v any) (*T, error) {
 
 	valuePtr, ok = v.(*T)
 	if !ok {
-		return nil, fmt.Errorf("expected flag value type '%T', got '%T'", valuePtr, v)
+		return nil, errors.TypeMismatch(valuePtr, v)
 	}
 	return valuePtr, nil
 }

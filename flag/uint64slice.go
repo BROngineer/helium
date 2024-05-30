@@ -1,9 +1,10 @@
 package flag
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/brongineer/helium/errors"
 )
 
 type uint64Slice = flag[[]uint64]
@@ -15,19 +16,19 @@ type Uint64Slice struct {
 func (f *Uint64Slice) Parse(input string) error {
 	var empty string
 	if input == empty {
-		return fmt.Errorf("no value provided")
+		return errors.NoValueProvided(f.Name())
 	}
 	s := strings.Split(input, f.Separator())
 	parsed := make([]uint64, 0, len(s))
 	for _, el := range s {
 		v, err := strconv.ParseUint(el, 10, 64)
 		if err != nil {
-			return err
+			return errors.ParseError(f.Name(), err)
 		}
 		parsed = append(parsed, v)
 	}
 	if f.IsVisited() {
-		stored := *f.Value().(*[]uint64)
+		stored := DerefOrDie[[]uint64](f.Value())
 		parsed = append(stored, parsed...)
 	}
 	f.value = &parsed
