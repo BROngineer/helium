@@ -13,7 +13,7 @@ type Uint32Slice struct {
 	*uint32Slice
 }
 
-func (f *Uint32Slice) Parse(input string) error {
+func (f *Uint32Slice) FromCommandLine(input string) error {
 	var empty string
 	if input == empty {
 		return errors.NoValueProvided(f.Name())
@@ -30,6 +30,21 @@ func (f *Uint32Slice) Parse(input string) error {
 	if f.IsVisited() {
 		stored := DerefOrDie[[]uint32](f.Value())
 		parsed = append(stored, parsed...)
+	}
+	f.value = &parsed
+	f.visited = true
+	return nil
+}
+
+func (f *Uint32Slice) FromEnvVariable(input string) error {
+	s := strings.Split(input, f.Separator())
+	parsed := make([]uint32, 0, len(s))
+	for _, el := range s {
+		v, err := strconv.ParseUint(el, 10, 8)
+		if err != nil {
+			return errors.ParseError(f.Name(), err)
+		}
+		parsed = append(parsed, uint32(v))
 	}
 	f.value = &parsed
 	f.visited = true

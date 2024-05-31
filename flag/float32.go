@@ -12,7 +12,7 @@ type Float32 struct {
 	*ffloat32
 }
 
-func (f *Float32) Parse(input string) error {
+func (f *Float32) FromCommandLine(input string) error {
 	if f.IsVisited() {
 		return errors.FlagVisited(f.Name())
 	}
@@ -22,6 +22,20 @@ func (f *Float32) Parse(input string) error {
 	}
 	parsed, err := strconv.ParseFloat(input, 32)
 	if err != nil {
+		return errors.ParseError(f.Name(), err)
+	}
+	v := float32(parsed)
+	f.value = &v
+	f.visited = true
+	return nil
+}
+
+func (f *Float32) FromEnvVariable(input string) error {
+	var (
+		parsed float64
+		err    error
+	)
+	if parsed, err = strconv.ParseFloat(input, 32); err != nil {
 		return errors.ParseError(f.Name(), err)
 	}
 	v := float32(parsed)

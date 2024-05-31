@@ -2,9 +2,11 @@ package helium
 
 import (
 	"errors"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/brongineer/helium/env"
 	ferrors "github.com/brongineer/helium/errors"
 	"github.com/brongineer/helium/flag"
 	"github.com/stretchr/testify/assert"
@@ -563,29 +565,6 @@ func TestFlagSet_Parse(t *testing.T) {
 				"--sample-duration-slice", "1s", "2h",
 			},
 		},
-		{
-			name: "flagset validation error",
-			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
-				fs.Duration("sample-duration", flag.Shorthand("a"))
-				fs.StringSlice("sample-string", flag.Shorthand("b"), flag.Separator(";"), flag.Required())
-				fs.DurationSlice("sample-duration-slice", flag.Shorthand("c"), flag.Separator(" "))
-				return fs
-			},
-			expected: expected{
-				parsed: []result{
-					{flagName: "sample-duration", flagValue: time.Minute * 15, flagType: "duration"},
-					{flagName: "sample-string", flagValue: []string{"foo", "bar"}, flagType: "stringSlice"},
-					{flagName: "sample-duration-slice", flagValue: []time.Duration{time.Second, time.Hour * 2}, flagType: "durationSlice"},
-				},
-				err:         true,
-				expectedErr: ferrors.ErrNoValueProvided,
-			},
-			input: []string{
-				"--sample-duration", "15m",
-				"--sample-duration-slice", "1s", "2h",
-			},
-		},
 	}
 
 	for _, tc := range tests {
@@ -600,6 +579,96 @@ func TestFlagSet_Parse(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
+			for _, r := range tt.expected.parsed {
+				require.NotNil(t, fs.flagByName(r.flagName).Value())
+				assertParsedValue(t, fs, r)
+			}
+		})
+	}
+}
+
+type envTestCase struct {
+	name      string
+	flagSet   func() *FlagSet
+	variables map[string]string
+	expected  expected
+}
+
+func TestFlagSet_BindEnvVars(t *testing.T) {
+	t.Parallel()
+
+	tests := []envTestCase{
+		{
+			name: "env vars success",
+			flagSet: func() *FlagSet {
+				fs := &FlagSet{envOptions: []env.Option{env.Prefix("test1"), env.Capitalized()}}
+				fs.String("sample-string")
+				fs.Bool("sample-bool")
+				fs.Duration("sample-duration")
+				return fs
+			},
+			variables: map[string]string{
+				"TEST1_SAMPLE_STRING":   "foo",
+				"TEST1_SAMPLE_BOOL":     "true",
+				"TEST1_SAMPLE_DURATION": "15m",
+			},
+			expected: expected{
+				parsed: []result{
+					{flagName: "sample-duration", flagValue: time.Minute * 15, flagType: "duration"},
+					{flagName: "sample-string", flagValue: "foo", flagType: "string"},
+					{flagName: "sample-bool", flagValue: true, flagType: "bool"},
+				},
+				err: false,
+			},
+		},
+		{
+			name: "env vars failed",
+			flagSet: func() *FlagSet {
+				fs := &FlagSet{envOptions: []env.Option{env.Prefix("test2"), env.Capitalized()}}
+				fs.String("sample-string")
+				fs.Bool("sample-bool")
+				fs.Duration("sample-duration")
+				return fs
+			},
+			variables: map[string]string{
+				"TEST2_SAMPLE_STRING":   "foo",
+				"TEST2_SAMPLE_BOOL":     "yes",
+				"TEST2_SAMPLE_DURATION": "15m",
+			},
+			expected: expected{
+				parsed: []result{
+					{flagName: "sample-duration", flagValue: time.Minute * 15, flagType: "duration"},
+					{flagName: "sample-string", flagValue: "foo", flagType: "string"},
+					{flagName: "sample-bool", flagValue: true, flagType: "bool"},
+				},
+				err:         true,
+				expectedErr: ferrors.ErrParseFailed,
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		tt := tc
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			for k, v := range tt.variables {
+				err := os.Setenv(k, v)
+				require.NoError(t, err)
+			}
+			defer func() {
+				for k := range tt.variables {
+					err := os.Unsetenv(k)
+					require.NoError(t, err)
+				}
+			}()
+			fs := tt.flagSet()
+			err := fs.BindEnvVars("-", "_")
+			if tt.expected.err {
+				require.Error(t, err)
+				assert.True(t, errors.Is(err, tt.expected.expectedErr))
+				return
+			}
+			require.NoError(t, err)
 			for _, r := range tt.expected.parsed {
 				require.NotNil(t, fs.flagByName(r.flagName).Value())
 				assertParsedValue(t, fs, r)

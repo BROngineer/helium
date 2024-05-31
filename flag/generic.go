@@ -44,7 +44,6 @@ type flag[T allowed] struct {
 	name         string
 	description  string
 	shorthand    string
-	required     bool
 	shared       bool
 	visited      bool
 	defaultValue *T
@@ -78,10 +77,6 @@ func (f *flag[T]) Separator() string {
 	return f.separator
 }
 
-func (f *flag[T]) IsRequired() bool {
-	return f.required
-}
-
 func (f *flag[T]) IsShared() bool {
 	return f.shared
 }
@@ -100,10 +95,6 @@ func (f *flag[T]) setDescription(description string) {
 
 func (f *flag[T]) setShorthand(shorthand string) {
 	f.shorthand = shorthand
-}
-
-func (f *flag[T]) setRequired() {
-	f.required = true
 }
 
 func (f *flag[T]) setShared() {

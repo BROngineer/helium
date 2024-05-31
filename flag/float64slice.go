@@ -13,7 +13,7 @@ type Float64Slice struct {
 	*float64Slice
 }
 
-func (f *Float64Slice) Parse(input string) error {
+func (f *Float64Slice) FromCommandLine(input string) error {
 	var empty string
 	if input == empty {
 		return errors.NoValueProvided(f.Name())
@@ -30,6 +30,21 @@ func (f *Float64Slice) Parse(input string) error {
 	if f.IsVisited() {
 		stored := DerefOrDie[[]float64](f.Value())
 		parsed = append(stored, parsed...)
+	}
+	f.value = &parsed
+	f.visited = true
+	return nil
+}
+
+func (f *Float64Slice) FromEnvVariable(input string) error {
+	s := strings.Split(input, f.Separator())
+	parsed := make([]float64, 0, len(s))
+	for _, el := range s {
+		v, err := strconv.ParseFloat(el, 32)
+		if err != nil {
+			return errors.ParseError(f.Name(), err)
+		}
+		parsed = append(parsed, v)
 	}
 	f.value = &parsed
 	f.visited = true

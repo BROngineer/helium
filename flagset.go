@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/brongineer/helium/env"
 	ferrors "github.com/brongineer/helium/errors"
 	"github.com/brongineer/helium/flag"
 )
@@ -23,14 +24,15 @@ type flagPropertyGetter interface {
 	Description() string
 	Shorthand() string
 	Separator() string
-	IsRequired() bool
 	IsShared() bool
 	IsVisited() bool
-	Parse(string) error
+	FromCommandLine(string) error
+	FromEnvVariable(string) error
 }
 
 type FlagSet struct {
-	flags []flagPropertyGetter
+	flags      []flagPropertyGetter
+	envOptions []env.Option
 }
 
 func (fs *FlagSet) Parse(args []string) error {
@@ -50,20 +52,22 @@ func (fs *FlagSet) Parse(args []string) error {
 			return err
 		}
 	}
-	if err = fs.validateValuesSet(); err != nil {
-		return err
-	}
 	return nil
 }
 
-func (fs *FlagSet) validateValuesSet() error {
-	var err error
+func (fs *FlagSet) BindEnvVars(charOld, charNew string) error {
+	var (
+		empty string
+		err   error
+	)
+	c := env.Constructor(charOld, charNew, fs.envOptions...)
 	for _, f := range fs.flags {
-		if f.IsVisited() {
+		val := os.Getenv(c.VarFromFlagName(f.Name()))
+		if val == empty {
 			continue
 		}
-		if f.IsRequired() {
-			err = errors.Join(ferrors.NoValueProvided(f.Name()))
+		if e := f.FromEnvVariable(val); e != nil {
+			err = errors.Join(e)
 		}
 	}
 	return err
@@ -98,19 +102,19 @@ func (fs *FlagSet) parse(f flagPropertyGetter, i int, args []string) (int, error
 	idx := nextFlagIndex(i+1, args)
 	if idx > -1 {
 		v := strings.Join(args[i+1:idx], f.Separator())
-		if err := f.Parse(v); err != nil {
+		if err := f.FromCommandLine(v); err != nil {
 			return -1, err
 		}
 		return idx, nil
 	}
 	if i == len(args)-1 {
-		if err := f.Parse(""); err != nil {
+		if err := f.FromCommandLine(""); err != nil {
 			return -1, err
 		}
 		return len(args), nil
 	}
 	v := strings.Join(args[i+1:], f.Separator())
-	return len(args), f.Parse(v)
+	return len(args), f.FromCommandLine(v)
 }
 
 func (fs *FlagSet) parseStacked(stacked []string) error {
@@ -119,7 +123,7 @@ func (fs *FlagSet) parseStacked(stacked []string) error {
 		if f == nil {
 			return ferrors.UnknownShorthand(s)
 		}
-		if err := f.Parse(""); err != nil {
+		if err := f.FromCommandLine(""); err != nil {
 			return err
 		}
 	}

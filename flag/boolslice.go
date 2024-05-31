@@ -13,7 +13,7 @@ type BoolSlice struct {
 	*boolSlice
 }
 
-func (f *BoolSlice) Parse(input string) error {
+func (f *BoolSlice) FromCommandLine(input string) error {
 	var empty string
 	if input == empty {
 		return errors.NoValueProvided(f.Name())
@@ -30,6 +30,21 @@ func (f *BoolSlice) Parse(input string) error {
 	if f.IsVisited() {
 		stored := DerefOrDie[[]bool](f.Value())
 		parsed = append(stored, parsed...)
+	}
+	f.value = &parsed
+	f.visited = true
+	return nil
+}
+
+func (f *BoolSlice) FromEnvVariable(value string) error {
+	s := strings.Split(value, f.Separator())
+	parsed := make([]bool, 0, len(s))
+	for _, el := range s {
+		v, err := strconv.ParseBool(el)
+		if err != nil {
+			return errors.ParseError(f.Name(), err)
+		}
+		parsed = append(parsed, v)
 	}
 	f.value = &parsed
 	f.visited = true

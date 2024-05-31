@@ -12,7 +12,7 @@ type Int64 struct {
 	*fint64
 }
 
-func (f *Int64) Parse(input string) error {
+func (f *Int64) FromCommandLine(input string) error {
 	if f.IsVisited() {
 		return errors.FlagVisited(f.Name())
 	}
@@ -25,6 +25,19 @@ func (f *Int64) Parse(input string) error {
 		return errors.ParseError(f.Name(), err)
 	}
 	f.value = &v
+	f.visited = true
+	return nil
+}
+
+func (f *Int64) FromEnvVariable(input string) error {
+	var (
+		parsed int64
+		err    error
+	)
+	if parsed, err = strconv.ParseInt(input, 10, 64); err != nil {
+		return errors.ParseError(f.Name(), err)
+	}
+	f.value = &parsed
 	f.visited = true
 	return nil
 }

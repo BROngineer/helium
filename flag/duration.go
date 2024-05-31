@@ -12,7 +12,7 @@ type Duration struct {
 	*duration
 }
 
-func (f *Duration) Parse(input string) error {
+func (f *Duration) FromCommandLine(input string) error {
 	if f.IsVisited() {
 		return errors.FlagVisited(f.Name())
 	}
@@ -25,6 +25,19 @@ func (f *Duration) Parse(input string) error {
 		return errors.ParseError(f.Name(), err)
 	}
 	f.value = &v
+	f.visited = true
+	return nil
+}
+
+func (f *Duration) FromEnvVariable(input string) error {
+	var (
+		parsed time.Duration
+		err    error
+	)
+	if parsed, err = time.ParseDuration(input); err != nil {
+		return errors.ParseError(f.Name(), err)
+	}
+	f.value = &parsed
 	f.visited = true
 	return nil
 }

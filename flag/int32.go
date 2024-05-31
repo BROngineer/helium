@@ -12,7 +12,7 @@ type Int32 struct {
 	*fint32
 }
 
-func (f *Int32) Parse(input string) error {
+func (f *Int32) FromCommandLine(input string) error {
 	if f.IsVisited() {
 		return errors.FlagVisited(f.Name())
 	}
@@ -22,6 +22,20 @@ func (f *Int32) Parse(input string) error {
 	}
 	parsed, err := strconv.ParseInt(input, 10, 32)
 	if err != nil {
+		return errors.ParseError(f.Name(), err)
+	}
+	v := int32(parsed)
+	f.value = &v
+	f.visited = true
+	return nil
+}
+
+func (f *Int32) FromEnvVariable(input string) error {
+	var (
+		parsed int64
+		err    error
+	)
+	if parsed, err = strconv.ParseInt(input, 10, 32); err != nil {
 		return errors.ParseError(f.Name(), err)
 	}
 	v := int32(parsed)

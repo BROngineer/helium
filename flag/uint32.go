@@ -12,7 +12,7 @@ type Uint32 struct {
 	*fuint32
 }
 
-func (f *Uint32) Parse(input string) error {
+func (f *Uint32) FromCommandLine(input string) error {
 	if f.IsVisited() {
 		return errors.FlagVisited(f.Name())
 	}
@@ -22,6 +22,20 @@ func (f *Uint32) Parse(input string) error {
 	}
 	parsed, err := strconv.ParseUint(input, 10, 32)
 	if err != nil {
+		return errors.ParseError(f.Name(), err)
+	}
+	v := uint32(parsed)
+	f.value = &v
+	f.visited = true
+	return nil
+}
+
+func (f *Uint32) FromEnvVariable(input string) error {
+	var (
+		parsed uint64
+		err    error
+	)
+	if parsed, err = strconv.ParseUint(input, 10, 32); err != nil {
 		return errors.ParseError(f.Name(), err)
 	}
 	v := uint32(parsed)

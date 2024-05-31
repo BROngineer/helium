@@ -12,7 +12,7 @@ type Int struct {
 	*fint
 }
 
-func (f *Int) Parse(input string) error {
+func (f *Int) FromCommandLine(input string) error {
 	if f.IsVisited() {
 		return errors.FlagVisited(f.Name())
 	}
@@ -25,6 +25,19 @@ func (f *Int) Parse(input string) error {
 		return errors.ParseError(f.Name(), err)
 	}
 	f.value = &v
+	f.visited = true
+	return nil
+}
+
+func (f *Int) FromEnvVariable(input string) error {
+	var (
+		parsed int
+		err    error
+	)
+	if parsed, err = strconv.Atoi(input); err != nil {
+		return errors.ParseError(f.Name(), err)
+	}
+	f.value = &parsed
 	f.visited = true
 	return nil
 }

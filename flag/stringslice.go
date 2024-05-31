@@ -12,7 +12,7 @@ type StringSlice struct {
 	*stringSlice
 }
 
-func (f *StringSlice) Parse(input string) error {
+func (f *StringSlice) FromCommandLine(input string) error {
 	var empty string
 	if input == empty {
 		return errors.NoValueProvided(f.Name())
@@ -22,6 +22,13 @@ func (f *StringSlice) Parse(input string) error {
 		stored := DerefOrDie[[]string](f.Value())
 		v = append(stored, v...)
 	}
+	f.value = &v
+	f.visited = true
+	return nil
+}
+
+func (f *StringSlice) FromEnvVariable(input string) error {
+	v := strings.Split(input, f.Separator())
 	f.value = &v
 	f.visited = true
 	return nil

@@ -13,7 +13,7 @@ type IntSlice struct {
 	*intSlice
 }
 
-func (f *IntSlice) Parse(input string) error {
+func (f *IntSlice) FromCommandLine(input string) error {
 	var empty string
 	if input == empty {
 		return errors.NoValueProvided(f.Name())
@@ -30,6 +30,21 @@ func (f *IntSlice) Parse(input string) error {
 	if f.IsVisited() {
 		stored := DerefOrDie[[]int](f.Value())
 		parsed = append(stored, parsed...)
+	}
+	f.value = &parsed
+	f.visited = true
+	return nil
+}
+
+func (f *IntSlice) FromEnvVariable(input string) error {
+	s := strings.Split(input, f.Separator())
+	parsed := make([]int, 0, len(s))
+	for _, el := range s {
+		v, err := strconv.Atoi(el)
+		if err != nil {
+			return errors.ParseError(f.Name(), err)
+		}
+		parsed = append(parsed, v)
 	}
 	f.value = &parsed
 	f.visited = true

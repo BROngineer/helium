@@ -13,10 +13,10 @@ type flagPropertyGetter interface {
 	Description() string
 	Shorthand() string
 	Separator() string
-	IsRequired() bool
 	IsShared() bool
 	IsVisited() bool
-	Parse(string) error
+	FromCommandLine(string) error
+	FromEnvVariable(string) error
 }
 
 type expected struct {
@@ -87,7 +87,6 @@ func assertFlag[T allowed](t *testing.T, f flagPropertyGetter, tt flagTest) {
 		assert.True(t, ok)
 		assert.Equal(t, tt.expected.DefaultValue(), *actual)
 	}
-	assert.Equal(t, tt.expected.Required(), f.IsRequired())
 	assert.Equal(t, tt.expected.Shared(), f.IsShared())
 }
 
@@ -95,10 +94,10 @@ func assertGetFlag[T allowed](t *testing.T, f flagPropertyGetter, tt getFlagTest
 	assert.NotNil(t, f)
 	if tt.input != nil {
 		if tt.wanted.err {
-			assert.Error(t, f.Parse(*tt.input))
+			assert.Error(t, f.FromCommandLine(*tt.input))
 			return
 		}
-		assert.NoError(t, f.Parse(*tt.input))
+		assert.NoError(t, f.FromCommandLine(*tt.input))
 		assert.True(t, f.IsVisited())
 	}
 	assert.Equal(t, *tt.wanted.some, DerefOrDie[T](f.Value()))
@@ -123,7 +122,6 @@ func TestFlag_String(t *testing.T) {
 			[]Option{
 				Description("description"),
 				Shorthand("s"),
-				Required(),
 				Shared(),
 			},
 			expected{
@@ -203,7 +201,6 @@ func TestFlag_Duration(t *testing.T) {
 			[]Option{
 				Description("description"),
 				Shorthand("s"),
-				Required(),
 				Shared(),
 			},
 			expected{
@@ -292,7 +289,6 @@ func TestFlag_Bool(t *testing.T) {
 			[]Option{
 				Description("description"),
 				Shorthand("s"),
-				Required(),
 				Shared(),
 			},
 			expected{
@@ -2598,7 +2594,6 @@ func TestFlag_Counter(t *testing.T) {
 			[]Option{
 				Description("description"),
 				Shorthand("s"),
-				Required(),
 				Shared(),
 			},
 			expected{

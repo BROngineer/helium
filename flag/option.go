@@ -3,7 +3,6 @@ package flag
 type flagPropertySetter interface {
 	setDescription(string)
 	setShorthand(string)
-	setRequired()
 	setShared()
 	setDefaultValue(any)
 	setSeparator(string)
@@ -35,16 +34,6 @@ func (s shorthand) apply(f flagPropertySetter) {
 
 func Shorthand(value string) Option {
 	return shorthand{value}
-}
-
-type required struct{}
-
-func (r required) apply(f flagPropertySetter) {
-	f.setRequired()
-}
-
-func Required() Option {
-	return required{}
 }
 
 type shared struct{}

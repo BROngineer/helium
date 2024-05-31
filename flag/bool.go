@@ -12,7 +12,7 @@ type Bool struct {
 	*fbool
 }
 
-func (f *Bool) Parse(input string) error {
+func (f *Bool) FromCommandLine(input string) error {
 	var (
 		v   bool
 		err error
@@ -30,6 +30,19 @@ func (f *Bool) Parse(input string) error {
 		}
 	}
 	f.value = &v
+	f.visited = true
+	return nil
+}
+
+func (f *Bool) FromEnvVariable(input string) error {
+	var (
+		parsed bool
+		err    error
+	)
+	if parsed, err = strconv.ParseBool(input); err != nil {
+		return errors.ParseError(f.Name(), err)
+	}
+	f.value = &parsed
 	f.visited = true
 	return nil
 }

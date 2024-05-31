@@ -10,7 +10,7 @@ type String struct {
 	*fstring
 }
 
-func (f *String) Parse(input string) error {
+func (f *String) FromCommandLine(input string) error {
 	if f.IsVisited() {
 		return errors.FlagVisited(f.Name())
 	}
@@ -18,6 +18,12 @@ func (f *String) Parse(input string) error {
 	if input == empty {
 		return errors.NoValueProvided(f.Name())
 	}
+	f.value = &input
+	f.visited = true
+	return nil
+}
+
+func (f *String) FromEnvVariable(input string) error {
 	f.value = &input
 	f.visited = true
 	return nil
