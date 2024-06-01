@@ -1,0 +1,36 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.2.0
+  hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+      exclude: "^charts/etcd-operator/(values.schema.json|README.md)|site/content/en/docs/v([.0-9]+)/reference/api.md$"
+    - id: check-added-large-files
+- repo: local
+  hooks:
+    - id: make-fmt
+      name: make-fmt
+      entry: sh -c "make fmt"
+      language: system
+    - id: make-vet
+      name: make-vet
+      entry: sh -c "make vet"
+      language: system
+      require_serial: true
+    - id: make-goimports
+      name: make-goimports
+      entry: sh -c "make go-imports"
+      language: system
+      require_serial: true
+    - id: make-lint
+      name: make-lint
+      entry: sh -c "make lint"
+      language: system
+      require_serial: true
+    - id: make-mod-tidy
+      name: make-mod-tidy
+      entry: sh -c "make mod-tidy"
+      language: system
+      require_serial: true

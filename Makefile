@@ -1,6 +1,9 @@
 .PHONY: fmt
-fmt: goimports
+fmt:
 	go fmt ./...
+
+.PHONY: go-imports
+go-imports: goimports
 	$(GOIMPORTS) -w .
 
 .PHONY: vet
@@ -10,6 +13,10 @@ vet:
 .PHONY: lint
 lint: golangci-lint
 	$(GOLANGCI_LINT) run
+
+.PHONY: mod-tidy
+mod-tidy:
+	go mod tidy
 
 .PHONY: test
 test:
