@@ -12,6 +12,7 @@ const (
 	noValueProvidedMessage  = "no value provided for flag"
 	parseErrorMessage       = "failed to parse flag"
 	typeMismatchMessage     = "value type mismatch"
+	noParserDefinedMessage  = "no input parser defined for flag"
 )
 
 var (
@@ -21,6 +22,7 @@ var (
 	ErrNoValueProvided  = errors.New(noValueProvidedMessage)
 	ErrParseFailed      = errors.New(parseErrorMessage)
 	ErrTypeMismatch     = errors.New(typeMismatchMessage)
+	ErrNoParserDefined  = errors.New(noParserDefinedMessage)
 )
 
 func UnknownFlag(flagName string) error {
@@ -45,4 +47,8 @@ func ParseError(flagName string, err error) error {
 
 func TypeMismatch(actual, expected any) error {
 	return fmt.Errorf("expected %T, got %T: %w", expected, actual, ErrTypeMismatch)
+}
+
+func NoParserDefined(flagName string) error {
+	return fmt.Errorf("%s: %w", flagName, ErrNoParserDefined)
 }
