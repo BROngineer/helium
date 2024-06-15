@@ -11,8 +11,7 @@ import (
 // If the flag does not exist, it returns an error with the message "unknown flag".
 // If the value is nil, it returns an error with the message "value is nil".
 // If the type of the value does not match the specified type, it returns an error with the message "wrong type".
-// The function expects the allowed type to be one of the types defined in the flags.generic.allowed interface.
-func value[T allowed](v any) (*T, error) {
+func value[T any](v any) (*T, error) {
 	var (
 		valuePtr *T
 		ok       bool
@@ -28,7 +27,7 @@ func value[T allowed](v any) (*T, error) {
 // DerefOrDie dereferences a pointer and checks for errors. If the error is not nil,
 // it prints the error message to stderr and exits the program with code 1. If the pointer is nil,
 // it prints an error message to stderr and exits the program with code 1. It returns the dereferenced value.
-func DerefOrDie[T allowed](v any) T {
+func DerefOrDie[T any](v any) T {
 	p, err := value[T](v)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
@@ -44,7 +43,7 @@ func DerefOrDie[T allowed](v any) T {
 // PtrOrDie returns the pointer value `p` and exits the program if there is an error `err`.
 // If `err` is not nil, an error message is printed to stderr and the program exits with code 1.
 // The function is used to simplify error handling in flag retrieval functions.
-func PtrOrDie[T allowed](v any) *T {
+func PtrOrDie[T any](v any) *T {
 	p, err := value[T](v)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())

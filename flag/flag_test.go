@@ -55,12 +55,12 @@ func (e *expected) Shared() bool {
 	return e.shared
 }
 
-type result[T allowed] struct {
+type result[T any] struct {
 	some *T
 	err  bool
 }
 
-func ptrTo[T allowed](v T) *T {
+func ptrTo[T any](v T) *T {
 	return &v
 }
 
@@ -70,14 +70,14 @@ type flagTest struct {
 	expected expected
 }
 
-type getFlagTest[T allowed] struct {
+type getFlagTest[T any] struct {
 	name   string
 	opts   []Option
 	input  *string
 	wanted result[T]
 }
 
-func assertFlag[T allowed](t *testing.T, f flagPropertyGetter, tt flagTest) {
+func assertFlag[T any](t *testing.T, f flagPropertyGetter, tt flagTest) {
 	assert.NotNil(t, f)
 	assert.Equal(t, tt.expected.Description(), f.Description())
 	assert.Equal(t, tt.expected.Shorthand(), f.Shorthand())
@@ -90,7 +90,7 @@ func assertFlag[T allowed](t *testing.T, f flagPropertyGetter, tt flagTest) {
 	assert.Equal(t, tt.expected.Shared(), f.IsShared())
 }
 
-func assertGetFlag[T allowed](t *testing.T, f flagPropertyGetter, tt getFlagTest[T]) {
+func assertGetFlag[T any](t *testing.T, f flagPropertyGetter, tt getFlagTest[T]) {
 	assert.NotNil(t, f)
 	if tt.input != nil {
 		if tt.wanted.err {

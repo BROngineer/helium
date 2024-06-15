@@ -3,44 +3,11 @@ package flag
 import (
 	"fmt"
 	"os"
-	"time"
 )
 
 const defaultSliceSeparator = ","
 
-type intFlag interface {
-	~int | ~int8 | ~int16 | ~int32 | ~int64
-}
-
-type uintFlag interface {
-	~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64
-}
-
-type floatFlag interface {
-	~float32 | ~float64
-}
-
-type intSliceFlag interface {
-	~[]int | ~[]int8 | ~[]int16 | ~[]int32 | ~[]int64
-}
-
-type uintSliceFlag interface {
-	~[]uint | ~[]uint8 | ~[]uint16 | ~[]uint32 | ~[]uint64
-}
-
-type floatSliceFlag interface {
-	~[]float32 | ~[]float64
-}
-
-type sliceFlag interface {
-	~[]string | ~[]bool | ~[]time.Duration | intSliceFlag | uintSliceFlag | floatSliceFlag
-}
-
-type allowed interface {
-	~string | ~bool | intFlag | uintFlag | floatFlag | sliceFlag | time.Duration // | counter
-}
-
-type flag[T allowed] struct {
+type flag[T any] struct {
 	name         string
 	description  string
 	shorthand    string
@@ -85,7 +52,7 @@ func (f *flag[T]) IsVisited() bool {
 	return f.visited
 }
 
-func newFlag[T allowed](name string) *flag[T] {
+func newFlag[T any](name string) *flag[T] {
 	return &flag[T]{name: name}
 }
 
