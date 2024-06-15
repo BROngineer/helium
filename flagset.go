@@ -35,6 +35,10 @@ type FlagSet struct {
 	envOptions []env.Option
 }
 
+func NewFlagSet(opts ...env.Option) *FlagSet {
+	return &FlagSet{envOptions: opts}
+}
+
 func (fs *FlagSet) Parse(args []string) error {
 	var (
 		i   int
