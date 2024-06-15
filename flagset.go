@@ -51,6 +51,8 @@ func (fs *FlagSet) Parse(args []string) error {
 			i, err = fs.parseLong(args, i)
 		case strings.HasPrefix(args[i], shortFlagNamePrefix):
 			i, err = fs.parseShort(args, i)
+		default:
+			i++
 		}
 		if err != nil {
 			return err
