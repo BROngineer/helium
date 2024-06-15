@@ -1,6 +1,8 @@
 package flag
 
 import (
+	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -17,6 +19,8 @@ type flagPropertyGetter interface {
 	IsVisited() bool
 	FromCommandLine(string) error
 	FromEnvVariable(string) error
+	CommandLineParser() func(string) (any, error)
+	EnvVariableParser() func(string) (any, error)
 }
 
 type expected struct {
@@ -26,6 +30,8 @@ type expected struct {
 	defaultValue any
 	required     bool
 	shared       bool
+	cmdParser    func(string) (any, error)
+	envParser    func(string) (any, error)
 }
 
 func (e *expected) Description() string {
@@ -55,12 +61,20 @@ func (e *expected) Shared() bool {
 	return e.shared
 }
 
-type result[T allowed] struct {
+func (e *expected) CommandLineParser() func(string) (any, error) {
+	return e.cmdParser
+}
+
+func (e *expected) EnvVariableParser() func(string) (any, error) {
+	return e.envParser
+}
+
+type result[T any] struct {
 	some *T
 	err  bool
 }
 
-func ptrTo[T allowed](v T) *T {
+func ptrTo[T any](v T) *T {
 	return &v
 }
 
@@ -70,14 +84,14 @@ type flagTest struct {
 	expected expected
 }
 
-type getFlagTest[T allowed] struct {
+type getFlagTest[T any] struct {
 	name   string
 	opts   []Option
 	input  *string
 	wanted result[T]
 }
 
-func assertFlag[T allowed](t *testing.T, f flagPropertyGetter, tt flagTest) {
+func assertFlag[T any](t *testing.T, f flagPropertyGetter, tt flagTest) {
 	assert.NotNil(t, f)
 	assert.Equal(t, tt.expected.Description(), f.Description())
 	assert.Equal(t, tt.expected.Shorthand(), f.Shorthand())
@@ -88,9 +102,19 @@ func assertFlag[T allowed](t *testing.T, f flagPropertyGetter, tt flagTest) {
 		assert.Equal(t, tt.expected.DefaultValue(), *actual)
 	}
 	assert.Equal(t, tt.expected.Shared(), f.IsShared())
+	if tt.expected.CommandLineParser() == nil {
+		assert.Nil(t, f.CommandLineParser())
+	} else {
+		assert.Equal(t, reflect.ValueOf(tt.expected.CommandLineParser()).Pointer(), reflect.ValueOf(f.CommandLineParser()).Pointer())
+	}
+	if tt.expected.EnvVariableParser() == nil {
+		assert.Nil(t, f.EnvVariableParser())
+	} else {
+		assert.Equal(t, reflect.ValueOf(tt.expected.EnvVariableParser()).Pointer(), reflect.ValueOf(f.EnvVariableParser()).Pointer())
+	}
 }
 
-func assertGetFlag[T allowed](t *testing.T, f flagPropertyGetter, tt getFlagTest[T]) {
+func assertGetFlag[T any](t *testing.T, f flagPropertyGetter, tt getFlagTest[T]) {
 	assert.NotNil(t, f)
 	if tt.input != nil {
 		if tt.wanted.err {
@@ -102,6 +126,77 @@ func assertGetFlag[T allowed](t *testing.T, f flagPropertyGetter, tt getFlagTest
 	}
 	assert.Equal(t, *tt.wanted.some, DerefOrDie[T](f.Value()))
 	assert.Equal(t, tt.wanted.some, PtrOrDie[T](f.Value()))
+}
+
+type custom struct {
+	field int
+}
+
+func parser(input string) (any, error) {
+	v, err := strconv.Atoi(input)
+	if err != nil {
+		return nil, err
+	}
+	return &custom{field: v}, nil
+}
+
+func TestFlag_Custom(t *testing.T) {
+	t.Parallel()
+	tests := []flagTest{
+		{
+			"sample",
+			[]Option{},
+			expected{},
+		},
+		{
+			"sample",
+			[]Option{CommandLineParser(parser)},
+			expected{cmdParser: parser},
+		},
+	}
+	for _, tc := range tests {
+		tt := tc
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			f := NewCustom[custom](tt.name, tt.opts...)
+			assertFlag[custom](t, f, tt)
+		})
+	}
+}
+
+func TestFlag_GetCustom(t *testing.T) {
+	t.Parallel()
+	tests := []getFlagTest[custom]{
+		{
+			"sample",
+			[]Option{},
+			ptrTo("test"),
+			result[custom]{err: true},
+		},
+		{
+			"sample",
+			[]Option{CommandLineParser(parser)},
+			ptrTo("10"),
+			result[custom]{
+				ptrTo(custom{field: 10}),
+				false,
+			},
+		},
+		{
+			"sample",
+			[]Option{CommandLineParser(parser)},
+			ptrTo("invalid"),
+			result[custom]{err: true},
+		},
+	}
+	for _, tc := range tests {
+		tt := tc
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			f := NewCustom[custom](tt.name, tt.opts...)
+			assertGetFlag[custom](t, f, tt)
+		})
+	}
 }
 
 func TestFlag_String(t *testing.T) {

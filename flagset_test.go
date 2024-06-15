@@ -3,6 +3,7 @@ package helium
 import (
 	"errors"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -198,6 +199,12 @@ func assertParsedValue(t *testing.T, fs *FlagSet, r result) {
 	case "counter":
 		val := fs.GetCounter(r.flagName)
 		assert.Equal(t, r.flagValue, val)
+	case "custom":
+		val := GetCustomFlag[custom](fs, r.flagName)
+		assert.Equal(t, r.flagValue, val)
+		ptr := GetCustomFlagPtr[custom](fs, r.flagName)
+		require.NotNil(t, ptr)
+		assert.Equal(t, r.flagValue, *ptr)
 	default:
 		t.Fatalf("unknown flag type: %s", r.flagType)
 	}
@@ -222,13 +229,25 @@ type flagSetTest struct {
 	input    []string
 }
 
+type custom struct {
+	field int
+}
+
+func parser(input string) (any, error) {
+	v, err := strconv.Atoi(input)
+	if err != nil {
+		return nil, err
+	}
+	return &custom{field: v}, nil
+}
+
 func TestFlagSet_Parse(t *testing.T) {
 	t.Parallel()
 	tests := []flagSetTest{
 		{
 			name: "parse",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.String("sample-string")
 				fs.Bool("sample-bool")
 				return fs
@@ -245,7 +264,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse error",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.String("sample-string")
 				fs.Bool("sample-bool")
 				return fs
@@ -260,7 +279,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse shorthand",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.String("sample-string")
 				fs.Bool("sample-bool")
 				fs.Counter("sample-counter", flag.Shorthand("c"))
@@ -279,7 +298,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse stacked",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.Bool("sample-bool-one", flag.Shorthand("o"))
 				fs.Bool("sample-bool-two", flag.Shorthand("t"))
 				fs.Counter("sample-counter", flag.Shorthand("c"))
@@ -298,7 +317,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse stacked with value",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.Bool("sample-bool", flag.Shorthand("b"))
 				fs.Counter("sample-counter", flag.Shorthand("c"))
 				fs.Int("sample-int", flag.Shorthand("i"))
@@ -317,7 +336,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse error duplicate",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.String("sample-string")
 				fs.Bool("sample-bool")
 				return fs
@@ -332,7 +351,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse slice duplicate",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.String("sample-string")
 				fs.BoolSlice("sample-bool")
 				return fs
@@ -349,7 +368,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse unknown flag error",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.String("sample-string")
 				return fs
 			},
@@ -363,7 +382,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse unknown shorthand error",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.String("sample-string", flag.Shorthand("s"))
 				return fs
 			},
@@ -377,7 +396,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse unknown shorthand stacked error",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.String("sample-string", flag.Shorthand("s"))
 				return fs
 			},
@@ -391,7 +410,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse stacked no value error",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.String("sample-string", flag.Shorthand("s"))
 				return fs
 			},
@@ -405,7 +424,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse no value error",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.String("sample-string", flag.Shorthand("s"))
 				return fs
 			},
@@ -419,7 +438,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse integers",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.Int("sample-int", flag.Shorthand("a"))
 				fs.Int8("sample-int8", flag.Shorthand("b"))
 				fs.Int16("sample-int16", flag.Shorthand("c"))
@@ -442,7 +461,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse unsigned integers",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.Uint("sample-uint", flag.Shorthand("a"))
 				fs.Uint8("sample-uint8", flag.Shorthand("b"))
 				fs.Uint16("sample-uint16", flag.Shorthand("c"))
@@ -465,7 +484,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse integer slices",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.IntSlice("sample-int", flag.Shorthand("a"))
 				fs.Int8Slice("sample-int8", flag.Shorthand("b"))
 				fs.Int16Slice("sample-int16", flag.Shorthand("c"))
@@ -495,7 +514,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse unsigned integers",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.UintSlice("sample-uint", flag.Shorthand("a"))
 				fs.Uint8Slice("sample-uint8", flag.Shorthand("b"))
 				fs.Uint16Slice("sample-uint16", flag.Shorthand("c"))
@@ -518,7 +537,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse floats",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.Float32("sample-float32", flag.Shorthand("a"))
 				fs.Float64("sample-float64", flag.Shorthand("b"))
 				fs.Float32Slice("sample-float32-slice", flag.Shorthand("c"))
@@ -545,7 +564,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse string slice and duration",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{}
+				fs := NewFlagSet()
 				fs.Duration("sample-duration", flag.Shorthand("a"))
 				fs.StringSlice("sample-string", flag.Shorthand("b"), flag.Separator(";"))
 				fs.DurationSlice("sample-duration-slice", flag.Shorthand("c"), flag.Separator(" "))
@@ -564,6 +583,49 @@ func TestFlagSet_Parse(t *testing.T) {
 				"-b", "foo;bar",
 				"--sample-duration-slice", "1s", "2h",
 			},
+		},
+		{
+			name: "custom flag no parser error",
+			flagSet: func() *FlagSet {
+				fs := NewFlagSet()
+				CustomFlag[custom](fs, "sample")
+				return fs
+			},
+			expected: expected{
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrNoParserDefined,
+			},
+			input: []string{"--sample"},
+		},
+		{
+			name: "custom flag no error",
+			flagSet: func() *FlagSet {
+				fs := NewFlagSet()
+				CustomFlag[custom](fs, "sample", flag.CommandLineParser(parser))
+				return fs
+			},
+			expected: expected{
+				parsed: []result{
+					{flagName: "sample", flagValue: custom{field: 10}, flagType: "custom"},
+				},
+				err: false,
+			},
+			input: []string{"--sample", "10"},
+		},
+		{
+			name: "custom flag parse error",
+			flagSet: func() *FlagSet {
+				fs := NewFlagSet()
+				CustomFlag[custom](fs, "sample", flag.CommandLineParser(parser))
+				return fs
+			},
+			expected: expected{
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrParseFailed,
+			},
+			input: []string{"--sample", "invalid"},
 		},
 	}
 

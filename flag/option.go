@@ -6,6 +6,8 @@ type flagPropertySetter interface {
 	setShared()
 	setDefaultValue(any)
 	setSeparator(string)
+	setCommandLineParser(func(string) (any, error))
+	setEnvVariableParser(func(string) (any, error))
 }
 
 type Option interface {
@@ -68,6 +70,26 @@ func (s separator) apply(f flagPropertySetter) {
 
 func Separator(value string) Option {
 	return separator{value}
+}
+
+type commandLineParser func(string) (any, error)
+
+func (o commandLineParser) apply(f flagPropertySetter) {
+	f.setCommandLineParser(o)
+}
+
+func CommandLineParser(parser func(string) (any, error)) Option {
+	return commandLineParser(parser)
+}
+
+type envVariableParser func(string) (any, error)
+
+func (o envVariableParser) apply(f flagPropertySetter) {
+	f.setEnvVariableParser(o)
+}
+
+func EnvVariableParser(parser func(string) (any, error)) Option {
+	return envVariableParser(parser)
 }
 
 func applyForFlag(f flagPropertySetter, opts ...Option) {

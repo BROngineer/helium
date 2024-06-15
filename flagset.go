@@ -35,6 +35,10 @@ type FlagSet struct {
 	envOptions []env.Option
 }
 
+func NewFlagSet(opts ...env.Option) *FlagSet {
+	return &FlagSet{envOptions: opts}
+}
+
 func (fs *FlagSet) Parse(args []string) error {
 	var (
 		i   int
@@ -180,8 +184,7 @@ func (fs *FlagSet) addFlag(f flagPropertyGetter) {
 // String creates a new string flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve string values from the command line.
+// The created flag is used to set and retrieve string values from command line and environment variables.
 func (fs *FlagSet) String(name string, opts ...flag.Option) {
 	f := flag.NewString(name, opts...)
 	fs.addFlag(f)
@@ -190,8 +193,7 @@ func (fs *FlagSet) String(name string, opts ...flag.Option) {
 // Bool creates a new bool flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve bool values from the command line.
+// The created flag is used to set and retrieve bool values from command line and environment variables.
 func (fs *FlagSet) Bool(name string, opts ...flag.Option) {
 	f := flag.NewBool(name, opts...)
 	fs.addFlag(f)
@@ -200,8 +202,7 @@ func (fs *FlagSet) Bool(name string, opts ...flag.Option) {
 // Duration creates a new time.Duration flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve time.Duration values from the command line.
+// The created flag is used to set and retrieve time.Duration values from command line and environment variables.
 func (fs *FlagSet) Duration(name string, opts ...flag.Option) {
 	f := flag.NewDuration(name, opts...)
 	fs.addFlag(f)
@@ -210,8 +211,7 @@ func (fs *FlagSet) Duration(name string, opts ...flag.Option) {
 // Int creates a new int flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve int values from the command line.
+// The created flag is used to set and retrieve int values from command line and environment variables.
 func (fs *FlagSet) Int(name string, opts ...flag.Option) {
 	f := flag.NewInt(name, opts...)
 	fs.addFlag(f)
@@ -220,8 +220,7 @@ func (fs *FlagSet) Int(name string, opts ...flag.Option) {
 // Int8 creates a new int8 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve int8 values from the command line.
+// The created flag is used to set and retrieve int8 values from command line and environment variables.
 func (fs *FlagSet) Int8(name string, opts ...flag.Option) {
 	f := flag.NewInt8(name, opts...)
 	fs.addFlag(f)
@@ -230,8 +229,7 @@ func (fs *FlagSet) Int8(name string, opts ...flag.Option) {
 // Int16 creates a new int16 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve int16 values from the command line.
+// The created flag is used to set and retrieve int16 values from command line and environment variables.
 func (fs *FlagSet) Int16(name string, opts ...flag.Option) {
 	f := flag.NewInt16(name, opts...)
 	fs.addFlag(f)
@@ -240,8 +238,7 @@ func (fs *FlagSet) Int16(name string, opts ...flag.Option) {
 // Int32 creates a new int32 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve int32 values from the command line.
+// The created flag is used to set and retrieve int32 values from command line and environment variables.
 func (fs *FlagSet) Int32(name string, opts ...flag.Option) {
 	f := flag.NewInt32(name, opts...)
 	fs.addFlag(f)
@@ -250,8 +247,7 @@ func (fs *FlagSet) Int32(name string, opts ...flag.Option) {
 // Int64 creates a new int64 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve int64 values from the command line.
+// The created flag is used to set and retrieve int64 values from command line and environment variables.
 func (fs *FlagSet) Int64(name string, opts ...flag.Option) {
 	f := flag.NewInt64(name, opts...)
 	fs.addFlag(f)
@@ -260,8 +256,7 @@ func (fs *FlagSet) Int64(name string, opts ...flag.Option) {
 // Uint creates a new uint flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve uint values from the command line.
+// The created flag is used to set and retrieve uint values from command line and environment variables.
 func (fs *FlagSet) Uint(name string, opts ...flag.Option) {
 	f := flag.NewUint(name, opts...)
 	fs.addFlag(f)
@@ -270,8 +265,7 @@ func (fs *FlagSet) Uint(name string, opts ...flag.Option) {
 // Uint8 creates a new uint8 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve uint8 values from the command line.
+// The created flag is used to set and retrieve uint8 values from command line and environment variables.
 func (fs *FlagSet) Uint8(name string, opts ...flag.Option) {
 	f := flag.NewUint8(name, opts...)
 	fs.addFlag(f)
@@ -280,8 +274,7 @@ func (fs *FlagSet) Uint8(name string, opts ...flag.Option) {
 // Uint16 creates a new uint16 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve uint16 values from the command line.
+// The created flag is used to set and retrieve uint16 values from command line and environment variables.
 func (fs *FlagSet) Uint16(name string, opts ...flag.Option) {
 	f := flag.NewUint16(name, opts...)
 	fs.addFlag(f)
@@ -290,8 +283,7 @@ func (fs *FlagSet) Uint16(name string, opts ...flag.Option) {
 // Uint32 creates a new uint32 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve uint32 values from the command line.
+// The created flag is used to set and retrieve uint32 values from command line and environment variables.
 func (fs *FlagSet) Uint32(name string, opts ...flag.Option) {
 	f := flag.NewUint32(name, opts...)
 	fs.addFlag(f)
@@ -300,8 +292,7 @@ func (fs *FlagSet) Uint32(name string, opts ...flag.Option) {
 // Uint64 creates a new uint64 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve uint64 values from the command line.
+// The created flag is used to set and retrieve uint64 values from command line and environment variables.
 func (fs *FlagSet) Uint64(name string, opts ...flag.Option) {
 	f := flag.NewUint64(name, opts...)
 	fs.addFlag(f)
@@ -310,8 +301,7 @@ func (fs *FlagSet) Uint64(name string, opts ...flag.Option) {
 // Float32 creates a new float32 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve float32 values from the command line.
+// The created flag is used to set and retrieve float32 values from command line and environment variables.
 func (fs *FlagSet) Float32(name string, opts ...flag.Option) {
 	f := flag.NewFloat32(name, opts...)
 	fs.addFlag(f)
@@ -320,8 +310,7 @@ func (fs *FlagSet) Float32(name string, opts ...flag.Option) {
 // Float64 creates a new float64 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve float64 values from the command line.
+// The created flag is used to set and retrieve float64 values from command line and environment variables.
 func (fs *FlagSet) Float64(name string, opts ...flag.Option) {
 	f := flag.NewFloat64(name, opts...)
 	fs.addFlag(f)
@@ -330,8 +319,7 @@ func (fs *FlagSet) Float64(name string, opts ...flag.Option) {
 // IntSlice creates a new []int flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []int values from the command line.
+// The created flag is used to set and retrieve []int values from command line and environment variables.
 func (fs *FlagSet) IntSlice(name string, opts ...flag.Option) {
 	f := flag.NewIntSlice(name, opts...)
 	fs.addFlag(f)
@@ -340,8 +328,7 @@ func (fs *FlagSet) IntSlice(name string, opts ...flag.Option) {
 // Int8Slice creates a new []int8 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []int8 values from the command line.
+// The created flag is used to set and retrieve []int8 values from command line and environment variables.
 func (fs *FlagSet) Int8Slice(name string, opts ...flag.Option) {
 	f := flag.NewInt8Slice(name, opts...)
 	fs.addFlag(f)
@@ -350,8 +337,7 @@ func (fs *FlagSet) Int8Slice(name string, opts ...flag.Option) {
 // Int16Slice creates a new []int16 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []int16 values from the command line.
+// The created flag is used to set and retrieve []int16 values from command line and environment variables.
 func (fs *FlagSet) Int16Slice(name string, opts ...flag.Option) {
 	f := flag.NewInt16Slice(name, opts...)
 	fs.addFlag(f)
@@ -360,8 +346,7 @@ func (fs *FlagSet) Int16Slice(name string, opts ...flag.Option) {
 // Int32Slice creates a new []int32 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []int32 values from the command line.
+// The created flag is used to set and retrieve []int32 values from command line and environment variables.
 func (fs *FlagSet) Int32Slice(name string, opts ...flag.Option) {
 	f := flag.NewInt32Slice(name, opts...)
 	fs.addFlag(f)
@@ -370,8 +355,7 @@ func (fs *FlagSet) Int32Slice(name string, opts ...flag.Option) {
 // Int64Slice creates a new []int64 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []int64 values from the command line.
+// The created flag is used to set and retrieve []int64 values from command line and environment variables.
 func (fs *FlagSet) Int64Slice(name string, opts ...flag.Option) {
 	f := flag.NewInt64Slice(name, opts...)
 	fs.addFlag(f)
@@ -380,8 +364,7 @@ func (fs *FlagSet) Int64Slice(name string, opts ...flag.Option) {
 // UintSlice creates a new []uint flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []uint values from the command line.
+// The created flag is used to set and retrieve []uint values from command line and environment variables.
 func (fs *FlagSet) UintSlice(name string, opts ...flag.Option) {
 	f := flag.NewUintSlice(name, opts...)
 	fs.addFlag(f)
@@ -390,8 +373,7 @@ func (fs *FlagSet) UintSlice(name string, opts ...flag.Option) {
 // Uint8Slice creates a new []uint8 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []uint8 values from the command line.
+// The created flag is used to set and retrieve []uint8 values from command line and environment variables.
 func (fs *FlagSet) Uint8Slice(name string, opts ...flag.Option) {
 	f := flag.NewUint8Slice(name, opts...)
 	fs.addFlag(f)
@@ -400,8 +382,7 @@ func (fs *FlagSet) Uint8Slice(name string, opts ...flag.Option) {
 // Uint16Slice creates a new []uint16 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []uint16 values from the command line.
+// The created flag is used to set and retrieve []uint16 values from command line and environment variables.
 func (fs *FlagSet) Uint16Slice(name string, opts ...flag.Option) {
 	f := flag.NewUint16Slice(name, opts...)
 	fs.addFlag(f)
@@ -410,8 +391,7 @@ func (fs *FlagSet) Uint16Slice(name string, opts ...flag.Option) {
 // Uint32Slice creates a new []uint32 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []uint32 values from the command line.
+// The created flag is used to set and retrieve []uint32 values from command line and environment variables.
 func (fs *FlagSet) Uint32Slice(name string, opts ...flag.Option) {
 	f := flag.NewUint32Slice(name, opts...)
 	fs.addFlag(f)
@@ -420,8 +400,7 @@ func (fs *FlagSet) Uint32Slice(name string, opts ...flag.Option) {
 // Uint64Slice creates a new []uint64 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []uint64 values from the command line.
+// The created flag is used to set and retrieve []uint64 values from command line and environment variables.
 func (fs *FlagSet) Uint64Slice(name string, opts ...flag.Option) {
 	f := flag.NewUint64Slice(name, opts...)
 	fs.addFlag(f)
@@ -430,8 +409,7 @@ func (fs *FlagSet) Uint64Slice(name string, opts ...flag.Option) {
 // Float32Slice creates a new []float32 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []float32 values from the command line.
+// The created flag is used to set and retrieve []float32 values from command line and environment variables.
 func (fs *FlagSet) Float32Slice(name string, opts ...flag.Option) {
 	f := flag.NewFloat32Slice(name, opts...)
 	fs.addFlag(f)
@@ -440,8 +418,7 @@ func (fs *FlagSet) Float32Slice(name string, opts ...flag.Option) {
 // Float64Slice creates a new []float64 flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []float64 values from the command line.
+// The created flag is used to set and retrieve []float64 values from command line and environment variables.
 func (fs *FlagSet) Float64Slice(name string, opts ...flag.Option) {
 	f := flag.NewFloat64Slice(name, opts...)
 	fs.addFlag(f)
@@ -450,8 +427,7 @@ func (fs *FlagSet) Float64Slice(name string, opts ...flag.Option) {
 // StringSlice creates a new []string flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []string values from the command line.
+// The created flag is used to set and retrieve []string values from command line and environment variables.
 func (fs *FlagSet) StringSlice(name string, opts ...flag.Option) {
 	f := flag.NewStringSlice(name, opts...)
 	fs.addFlag(f)
@@ -460,8 +436,7 @@ func (fs *FlagSet) StringSlice(name string, opts ...flag.Option) {
 // DurationSlice creates a new []time.Duration flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []time.Duration values from the command line.
+// The created flag is used to set and retrieve []time.Duration values from command line and environment variables.
 func (fs *FlagSet) DurationSlice(name string, opts ...flag.Option) {
 	f := flag.NewDurationSlice(name, opts...)
 	fs.addFlag(f)
@@ -470,13 +445,16 @@ func (fs *FlagSet) DurationSlice(name string, opts ...flag.Option) {
 // BoolSlice creates a new []bool flag with the specified name and options.
 // It appends the created flag to the list of flags which belongs to FlagSet.
 //
-// The created flag implements the Flag interface and can be used to set
-// and retrieve []bool values from the command line.
+// The created flag is used to set and retrieve []bool values from command line and environment variables.
 func (fs *FlagSet) BoolSlice(name string, opts ...flag.Option) {
 	f := flag.NewBoolSlice(name, opts...)
 	fs.addFlag(f)
 }
 
+// Counter creates a new counter flag with the specified name and options.
+// It appends the created flag to the list of flags which belongs to FlagSet.
+//
+// The created flag is used to set and retrieve counter values from the command line and environment variables.
 func (fs *FlagSet) Counter(name string, opts ...flag.Option) {
 	f := flag.NewCounter(name, opts...)
 	fs.addFlag(f)
@@ -1090,4 +1068,37 @@ func (fs *FlagSet) GetBoolSlicePtr(name string) *[]bool {
 func (fs *FlagSet) GetCounter(name string) int {
 	f := fs.flagByName(name)
 	return flag.DerefOrDie[int](f.Value())
+}
+
+// CustomFlag creates a new flag of defined type with the specified name and options.
+// It appends the created flag to the list of flags which belongs to FlagSet.
+//
+// CustomFlag defined as function due to generic nature of custom flags, which does not allow
+// to create method with type parameter for non-generic receiver.
+//
+// The created flag is used to set and retrieve values of defined type from command line and environment variables.
+func CustomFlag[T any](fs *FlagSet, name string, opts ...flag.Option) {
+	f := flag.NewCustom[T](name, opts...)
+	fs.addFlag(f)
+}
+
+// GetCustomFlag returns the value of defined type, associated with the given name from the given FlagSet.
+// It will exit with code 1 if:
+//   - flag does not exist
+//   - flag value is nil
+//   - flag value has different type
+func GetCustomFlag[T any](fs *FlagSet, name string) T {
+	f := fs.flagByName(name)
+	return flag.DerefOrDie[T](f.Value())
+}
+
+// GetCustomFlagPtr returns a pointer to the value of defined type,
+// associated with the given name from the given FlagSet.
+// If flag value is not set, it returns nil.
+// It will exit with code 1 if:
+//   - flag does not exist
+//   - flag value has different type
+func GetCustomFlagPtr[T any](fs *FlagSet, name string) *T {
+	f := fs.flagByName(name)
+	return flag.PtrOrDie[T](f.Value())
 }
