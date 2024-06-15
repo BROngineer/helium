@@ -1095,3 +1095,18 @@ func (fs *FlagSet) GetCounter(name string) int {
 	f := fs.flagByName(name)
 	return flag.DerefOrDie[int](f.Value())
 }
+
+func CustomFlag[T any](fs *FlagSet, name string, opts ...flag.Option) {
+	f := flag.NewCustom[T](name, opts...)
+	fs.addFlag(f)
+}
+
+func GetCustomFlag[T any](fs *FlagSet, name string) T {
+	f := fs.flagByName(name)
+	return flag.DerefOrDie[T](f.Value())
+}
+
+func GetCustomFlagPtr[T any](fs *FlagSet, name string) *T {
+	f := fs.flagByName(name)
+	return flag.PtrOrDie[T](f.Value())
+}
