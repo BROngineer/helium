@@ -1,0 +1,10 @@
+{
+  "bindAddress": "100.64.0.1",
+  "bindPort": 8080,
+  "timeout": 15000000000,
+  "peers": [
+    "https://peer-0.example.com",
+    "https://peer-1.example.com",
+    "https://peer-2.example.com"
+  ]
+}
