@@ -12,40 +12,47 @@ type Float32 struct {
 	*ffloat32
 }
 
-func (f *Float32) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type float32Parser struct {
+	*embeddedParser
+}
+
+func defaultFloat32Parser() *float32Parser {
+	return &float32Parser{&embeddedParser{}}
+}
+
+func (p *float32Parser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	parsed, err := strconv.ParseFloat(input, 32)
+	v, err := strconv.ParseFloat(input, 32)
 	if err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	v := float32(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := float32(v)
+	return &parsed, nil
 }
 
-func (f *Float32) FromEnvVariable(input string) error {
+func (p *float32Parser) ParseEnv(input string) (any, error) {
 	var (
-		parsed float64
-		err    error
+		v   float64
+		err error
 	)
-	if parsed, err = strconv.ParseFloat(input, 32); err != nil {
-		return errors.ParseError(f.Name(), err)
+	if v, err = strconv.ParseFloat(input, 32); err != nil {
+		return nil, err
 	}
-	v := float32(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := float32(v)
+	return &parsed, nil
 }
 
 func NewFloat32(name string, opts ...Option) *Float32 {
 	f := newFlag[float32](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultFloat32Parser())
+	}
 	return &Float32{f}
 }

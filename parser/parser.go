@@ -11,32 +11,32 @@ type FlagParser interface {
 	ParseEnv(string) (any, error)
 }
 
-type DefaultParser struct {
+type EmbeddedParser struct {
 	visited      bool
 	separator    string
 	currentValue any
 }
 
-func (p *DefaultParser) SetVisited(v bool) {
+func (p *EmbeddedParser) SetVisited(v bool) {
 	p.visited = v
 }
 
-func (p *DefaultParser) IsVisited() bool {
+func (p *EmbeddedParser) IsVisited() bool {
 	return p.visited
 }
 
-func (p *DefaultParser) SetSeparator(s string) {
+func (p *EmbeddedParser) SetSeparator(s string) {
 	p.separator = s
 }
 
-func (p *DefaultParser) Separator() string {
+func (p *EmbeddedParser) Separator() string {
 	return p.separator
 }
 
-func (p *DefaultParser) SetCurrentValue(v any) {
+func (p *EmbeddedParser) SetCurrentValue(v any) {
 	p.currentValue = v
 }
 
-func (p *DefaultParser) CurrentValue() any {
+func (p *EmbeddedParser) CurrentValue() any {
 	return p.currentValue
 }

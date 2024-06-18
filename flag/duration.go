@@ -12,38 +12,45 @@ type Duration struct {
 	*duration
 }
 
-func (f *Duration) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type durationParser struct {
+	*embeddedParser
+}
+
+func defaultDurationParser() *durationParser {
+	return &durationParser{&embeddedParser{}}
+}
+
+func (p *durationParser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	v, err := time.ParseDuration(input)
+	parsed, err := time.ParseDuration(input)
 	if err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	f.value = &v
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
-func (f *Duration) FromEnvVariable(input string) error {
+func (p *durationParser) ParseEnv(input string) (any, error) {
 	var (
 		parsed time.Duration
 		err    error
 	)
 	if parsed, err = time.ParseDuration(input); err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, err
 }
 
 func NewDuration(name string, opts ...Option) *Duration {
 	f := newFlag[time.Duration](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultDurationParser())
+	}
 	return &Duration{f}
 }

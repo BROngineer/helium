@@ -12,38 +12,45 @@ type Int struct {
 	*fint
 }
 
-func (f *Int) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type intParser struct {
+	*embeddedParser
+}
+
+func defaultIntParser() *intParser {
+	return &intParser{&embeddedParser{}}
+}
+
+func (p *intParser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	v, err := strconv.Atoi(input)
+	parsed, err := strconv.Atoi(input)
 	if err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	f.value = &v
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
-func (f *Int) FromEnvVariable(input string) error {
+func (p *intParser) ParseEnv(input string) (any, error) {
 	var (
 		parsed int
 		err    error
 	)
 	if parsed, err = strconv.Atoi(input); err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
 func NewInt(name string, opts ...Option) *Int {
 	f := newFlag[int](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultIntParser())
+	}
 	return &Int{f}
 }

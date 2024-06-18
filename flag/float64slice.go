@@ -13,46 +13,53 @@ type Float64Slice struct {
 	*float64Slice
 }
 
-func (f *Float64Slice) FromCommandLine(input string) error {
+type float64SliceParser struct {
+	*embeddedParser
+}
+
+func defaultFloat64SliceParser() *float64SliceParser {
+	return &float64SliceParser{&embeddedParser{}}
+}
+
+func (p *float64SliceParser) ParseCmd(input string) (any, error) {
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	s := strings.Split(input, f.Separator())
+	s := strings.Split(input, p.Separator())
 	parsed := make([]float64, 0, len(s))
 	for _, el := range s {
 		v, err := strconv.ParseFloat(el, 64)
 		if err != nil {
-			return errors.ParseError(f.Name(), err)
+			return nil, err
 		}
 		parsed = append(parsed, v)
 	}
-	if f.IsVisited() {
-		stored := DerefOrDie[[]float64](f.Value())
+	if p.IsVisited() {
+		stored := DerefOrDie[[]float64](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
-func (f *Float64Slice) FromEnvVariable(input string) error {
-	s := strings.Split(input, f.Separator())
+func (p *float64SliceParser) ParseEnv(input string) (any, error) {
+	s := strings.Split(input, p.Separator())
 	parsed := make([]float64, 0, len(s))
 	for _, el := range s {
-		v, err := strconv.ParseFloat(el, 32)
+		v, err := strconv.ParseFloat(el, 64)
 		if err != nil {
-			return errors.ParseError(f.Name(), err)
+			return nil, err
 		}
 		parsed = append(parsed, v)
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
 func NewFloat64Slice(name string, opts ...Option) *Float64Slice {
 	f := newFlag[[]float64](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultFloat64SliceParser())
+	}
 	return &Float64Slice{f}
 }

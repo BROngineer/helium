@@ -12,40 +12,47 @@ type Int32 struct {
 	*fint32
 }
 
-func (f *Int32) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type int32Parser struct {
+	*embeddedParser
+}
+
+func defaultInt32Parser() *int32Parser {
+	return &int32Parser{&embeddedParser{}}
+}
+
+func (p *int32Parser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	parsed, err := strconv.ParseInt(input, 10, 32)
+	v, err := strconv.ParseInt(input, 10, 32)
 	if err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	v := int32(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := int32(v)
+	return &parsed, nil
 }
 
-func (f *Int32) FromEnvVariable(input string) error {
+func (p *int32Parser) ParseEnv(value string) (any, error) {
 	var (
-		parsed int64
-		err    error
+		v   int64
+		err error
 	)
-	if parsed, err = strconv.ParseInt(input, 10, 32); err != nil {
-		return errors.ParseError(f.Name(), err)
+	if v, err = strconv.ParseInt(value, 10, 32); err != nil {
+		return nil, err
 	}
-	v := int32(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := int32(v)
+	return &parsed, nil
 }
 
 func NewInt32(name string, opts ...Option) *Int32 {
 	f := newFlag[int32](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultInt32Parser())
+	}
 	return &Int32{f}
 }

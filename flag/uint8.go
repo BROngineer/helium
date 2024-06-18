@@ -12,40 +12,47 @@ type Uint8 struct {
 	*fuint8
 }
 
-func (f *Uint8) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type uint8Parser struct {
+	*embeddedParser
+}
+
+func defaultUint8Parser() *uint8Parser {
+	return &uint8Parser{&embeddedParser{}}
+}
+
+func (p *uint8Parser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	parsed, err := strconv.ParseUint(input, 10, 8)
+	v, err := strconv.ParseUint(input, 10, 8)
 	if err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	v := uint8(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := uint8(v)
+	return &parsed, nil
 }
 
-func (f *Uint8) FromEnvVariable(input string) error {
+func (p *uint8Parser) ParseEnv(input string) (any, error) {
 	var (
-		parsed uint64
-		err    error
+		v   uint64
+		err error
 	)
-	if parsed, err = strconv.ParseUint(input, 10, 8); err != nil {
-		return errors.ParseError(f.Name(), err)
+	if v, err = strconv.ParseUint(input, 10, 8); err != nil {
+		return nil, err
 	}
-	v := uint8(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := uint8(v)
+	return &parsed, nil
 }
 
 func NewUint8(name string, opts ...Option) *Uint8 {
 	f := newFlag[uint8](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultUint8Parser())
+	}
 	return &Uint8{f}
 }

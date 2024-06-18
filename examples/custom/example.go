@@ -30,7 +30,7 @@ type logParams struct {
 }
 
 type customParser[T any] struct {
-	*parser.DefaultParser
+	*parser.EmbeddedParser
 }
 
 func (p *customParser[T]) ParseCmd(input string) (any, error) {
@@ -57,7 +57,7 @@ func (p *customParser[T]) ParseEnv(_ string) (any, error) {
 }
 
 func newCustomParser[T any]() *customParser[T] {
-	return &customParser[T]{&parser.DefaultParser{}}
+	return &customParser[T]{&parser.EmbeddedParser{}}
 }
 
 func parse(args []string) (params, error) {

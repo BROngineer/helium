@@ -12,40 +12,47 @@ type Uint struct {
 	*fuint
 }
 
-func (f *Uint) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type uintParser struct {
+	*embeddedParser
+}
+
+func defaultUintParser() *uintParser {
+	return &uintParser{&embeddedParser{}}
+}
+
+func (p *uintParser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	parsed, err := strconv.ParseUint(input, 10, 32)
+	v, err := strconv.ParseUint(input, 10, 32)
 	if err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	v := uint(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := uint(v)
+	return &parsed, nil
 }
 
-func (f *Uint) FromEnvVariable(input string) error {
+func (p *uintParser) ParseEnv(input string) (any, error) {
 	var (
-		parsed uint64
-		err    error
+		v   uint64
+		err error
 	)
-	if parsed, err = strconv.ParseUint(input, 10, 32); err != nil {
-		return errors.ParseError(f.Name(), err)
+	if v, err = strconv.ParseUint(input, 10, 32); err != nil {
+		return nil, err
 	}
-	v := uint(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := uint(v)
+	return &parsed, nil
 }
 
 func NewUint(name string, opts ...Option) *Uint {
 	f := newFlag[uint](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultUintParser())
+	}
 	return &Uint{f}
 }

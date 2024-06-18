@@ -235,7 +235,7 @@ type custom struct {
 }
 
 type customParser struct {
-	*parser.DefaultParser
+	*parser.EmbeddedParser
 }
 
 func (p *customParser) ParseCmd(s string) (any, error) {
@@ -611,7 +611,7 @@ func TestFlagSet_Parse(t *testing.T) {
 			name: "custom flag no error",
 			flagSet: func() *FlagSet {
 				fs := NewFlagSet()
-				CustomFlag[custom](fs, "sample", flag.Parser(&customParser{&parser.DefaultParser{}}))
+				CustomFlag[custom](fs, "sample", flag.Parser(&customParser{&parser.EmbeddedParser{}}))
 				return fs
 			},
 			expected: expected{
@@ -626,7 +626,7 @@ func TestFlagSet_Parse(t *testing.T) {
 			name: "custom flag parse error",
 			flagSet: func() *FlagSet {
 				fs := NewFlagSet()
-				CustomFlag[custom](fs, "sample", flag.Parser(&customParser{&parser.DefaultParser{}}))
+				CustomFlag[custom](fs, "sample", flag.Parser(&customParser{&parser.EmbeddedParser{}}))
 				return fs
 			},
 			expected: expected{
