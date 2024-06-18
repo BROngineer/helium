@@ -1,7 +1,6 @@
 package flag
 
 import (
-	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -19,8 +18,7 @@ type flagPropertyGetter interface {
 	IsVisited() bool
 	FromCommandLine(string) error
 	FromEnvVariable(string) error
-	CommandLineParser() func(string) (any, error)
-	EnvVariableParser() func(string) (any, error)
+	Parser() flagParser
 }
 
 type expected struct {
@@ -30,8 +28,6 @@ type expected struct {
 	defaultValue any
 	required     bool
 	shared       bool
-	cmdParser    func(string) (any, error)
-	envParser    func(string) (any, error)
 }
 
 func (e *expected) Description() string {
@@ -59,14 +55,6 @@ func (e *expected) Required() bool {
 
 func (e *expected) Shared() bool {
 	return e.shared
-}
-
-func (e *expected) CommandLineParser() func(string) (any, error) {
-	return e.cmdParser
-}
-
-func (e *expected) EnvVariableParser() func(string) (any, error) {
-	return e.envParser
 }
 
 type result[T any] struct {
@@ -102,16 +90,6 @@ func assertFlag[T any](t *testing.T, f flagPropertyGetter, tt flagTest) {
 		assert.Equal(t, tt.expected.DefaultValue(), *actual)
 	}
 	assert.Equal(t, tt.expected.Shared(), f.IsShared())
-	if tt.expected.CommandLineParser() == nil {
-		assert.Nil(t, f.CommandLineParser())
-	} else {
-		assert.Equal(t, reflect.ValueOf(tt.expected.CommandLineParser()).Pointer(), reflect.ValueOf(f.CommandLineParser()).Pointer())
-	}
-	if tt.expected.EnvVariableParser() == nil {
-		assert.Nil(t, f.EnvVariableParser())
-	} else {
-		assert.Equal(t, reflect.ValueOf(tt.expected.EnvVariableParser()).Pointer(), reflect.ValueOf(f.EnvVariableParser()).Pointer())
-	}
 }
 
 func assertGetFlag[T any](t *testing.T, f flagPropertyGetter, tt getFlagTest[T]) {
@@ -132,12 +110,24 @@ type custom struct {
 	field int
 }
 
-func parser(input string) (any, error) {
-	v, err := strconv.Atoi(input)
+type customParser struct {
+	*embeddedParser
+}
+
+func newCustomParser() *customParser {
+	return &customParser{&embeddedParser{}}
+}
+
+func (p *customParser) ParseCmd(s string) (any, error) {
+	v, err := strconv.Atoi(s)
 	if err != nil {
 		return nil, err
 	}
 	return &custom{field: v}, nil
+}
+
+func (p *customParser) ParseEnv(_ string) (any, error) {
+	return nil, nil
 }
 
 func TestFlag_Custom(t *testing.T) {
@@ -150,8 +140,8 @@ func TestFlag_Custom(t *testing.T) {
 		},
 		{
 			"sample",
-			[]Option{CommandLineParser(parser)},
-			expected{cmdParser: parser},
+			[]Option{Parser(newCustomParser())},
+			expected{},
 		},
 	}
 	for _, tc := range tests {
@@ -175,7 +165,7 @@ func TestFlag_GetCustom(t *testing.T) {
 		},
 		{
 			"sample",
-			[]Option{CommandLineParser(parser)},
+			[]Option{Parser(newCustomParser())},
 			ptrTo("10"),
 			result[custom]{
 				ptrTo(custom{field: 10}),
@@ -184,7 +174,7 @@ func TestFlag_GetCustom(t *testing.T) {
 		},
 		{
 			"sample",
-			[]Option{CommandLineParser(parser)},
+			[]Option{Parser(newCustomParser())},
 			ptrTo("invalid"),
 			result[custom]{err: true},
 		},
