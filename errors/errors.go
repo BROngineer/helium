@@ -13,16 +13,20 @@ const (
 	parseErrorMessage       = "failed to parse flag"
 	typeMismatchMessage     = "value type mismatch"
 	noParserDefinedMessage  = "no input parser defined for flag"
+	cmdParserNotImplemented = "command-line parser is not implemented"
+	envParserNotImplemented = "env variable parser is not implemented"
 )
 
 var (
-	ErrUnknownFlag      = errors.New(unknownFlagMessage)
-	ErrUnknownShorthand = errors.New(unknownShorthandMessage)
-	ErrFlagVisited      = errors.New(alreadyParsedMessage)
-	ErrNoValueProvided  = errors.New(noValueProvidedMessage)
-	ErrParseFailed      = errors.New(parseErrorMessage)
-	ErrTypeMismatch     = errors.New(typeMismatchMessage)
-	ErrNoParserDefined  = errors.New(noParserDefinedMessage)
+	ErrUnknownFlag               = errors.New(unknownFlagMessage)
+	ErrUnknownShorthand          = errors.New(unknownShorthandMessage)
+	ErrFlagVisited               = errors.New(alreadyParsedMessage)
+	ErrNoValueProvided           = errors.New(noValueProvidedMessage)
+	ErrParseFailed               = errors.New(parseErrorMessage)
+	ErrTypeMismatch              = errors.New(typeMismatchMessage)
+	ErrNoParserDefined           = errors.New(noParserDefinedMessage)
+	ErrCmdParserIsNotImplemented = errors.New(cmdParserNotImplemented)
+	ErrEnvParserIsNotImplemented = errors.New(envParserNotImplemented)
 )
 
 func UnknownFlag(flagName string) error {

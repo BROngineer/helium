@@ -1,5 +1,7 @@
 package parser
 
+import "github.com/brongineer/helium/errors"
+
 type FlagParser interface {
 	SetVisited(bool)
 	SetSeparator(string)
@@ -39,4 +41,12 @@ func (p *EmbeddedParser) SetCurrentValue(v any) {
 
 func (p *EmbeddedParser) CurrentValue() any {
 	return p.currentValue
+}
+
+func (p *EmbeddedParser) ParseCmd(_ string) (any, error) {
+	return nil, errors.ErrCmdParserIsNotImplemented
+}
+
+func (p *EmbeddedParser) ParseEnv(_ string) (any, error) {
+	return nil, errors.ErrEnvParserIsNotImplemented
 }
