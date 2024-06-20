@@ -3,6 +3,9 @@ name: Tests
 on:
   workflow_dispatch:
   pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   run-tests:
@@ -16,3 +19,7 @@ jobs:
           go-version: 1.22.3
       - name: run tests
         run: make test
+      - name: upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

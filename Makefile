@@ -20,7 +20,7 @@ mod-tidy:
 
 .PHONY: test
 test:
-	go test ./... -coverprofile cover.out
+	go test -race -coverprofile=coverage.out -covermode=atomic
 
 LOCAL_BIN ?= $(shell pwd)/bin
 $(LOCAL_BIN):
