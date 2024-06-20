@@ -12,43 +12,50 @@ type Bool struct {
 	*fbool
 }
 
-func (f *Bool) FromCommandLine(input string) error {
+type boolParser struct {
+	*embeddedParser
+}
+
+func defaultBoolParser() *boolParser {
+	return &boolParser{&embeddedParser{}}
+}
+
+func (p *boolParser) ParseCmd(input string) (any, error) {
 	var (
-		v   bool
-		err error
+		parsed bool
+		err    error
 	)
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	switch input {
 	case "":
-		v = true
+		parsed = true
 	default:
-		v, err = strconv.ParseBool(input)
+		parsed, err = strconv.ParseBool(input)
 		if err != nil {
-			return errors.ParseError(f.Name(), err)
+			return nil, err
 		}
 	}
-	f.value = &v
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
-func (f *Bool) FromEnvVariable(input string) error {
+func (p *boolParser) ParseEnv(input string) (any, error) {
 	var (
 		parsed bool
 		err    error
 	)
 	if parsed, err = strconv.ParseBool(input); err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
 func NewBool(name string, opts ...Option) *Bool {
 	f := newFlag[bool](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultBoolParser())
+	}
 	return &Bool{f}
 }

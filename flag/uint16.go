@@ -12,40 +12,47 @@ type Uint16 struct {
 	*fuint16
 }
 
-func (f *Uint16) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type uint16Parser struct {
+	*embeddedParser
+}
+
+func defaultUint16Parser() *uint16Parser {
+	return &uint16Parser{&embeddedParser{}}
+}
+
+func (p *uint16Parser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	parsed, err := strconv.ParseUint(input, 10, 16)
+	v, err := strconv.ParseUint(input, 10, 16)
 	if err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	v := uint16(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := uint16(v)
+	return &parsed, nil
 }
 
-func (f *Uint16) FromEnvVariable(input string) error {
+func (p *uint16Parser) ParseEnv(input string) (any, error) {
 	var (
-		parsed uint64
-		err    error
+		v   uint64
+		err error
 	)
-	if parsed, err = strconv.ParseUint(input, 10, 16); err != nil {
-		return errors.ParseError(f.Name(), err)
+	if v, err = strconv.ParseUint(input, 10, 16); err != nil {
+		return nil, err
 	}
-	v := uint16(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := uint16(v)
+	return &parsed, nil
 }
 
 func NewUint16(name string, opts ...Option) *Uint16 {
 	f := newFlag[uint16](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultUint16Parser())
+	}
 	return &Uint16{f}
 }

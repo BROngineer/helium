@@ -12,38 +12,46 @@ type Int64 struct {
 	*fint64
 }
 
-func (f *Int64) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type int64Parser struct {
+	*embeddedParser
+}
+
+func defaultInt64Parser() *int64Parser {
+	return &int64Parser{&embeddedParser{}}
+}
+
+func (p *int64Parser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
 	v, err := strconv.ParseInt(input, 10, 64)
 	if err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := v
+	return &parsed, nil
 }
 
-func (f *Int64) FromEnvVariable(input string) error {
+func (p *int64Parser) ParseEnv(value string) (any, error) {
 	var (
 		parsed int64
 		err    error
 	)
-	if parsed, err = strconv.ParseInt(input, 10, 64); err != nil {
-		return errors.ParseError(f.Name(), err)
+	if parsed, err = strconv.ParseInt(value, 10, 64); err != nil {
+		return nil, err
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
 func NewInt64(name string, opts ...Option) *Int64 {
 	f := newFlag[int64](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultInt64Parser())
+	}
 	return &Int64{f}
 }

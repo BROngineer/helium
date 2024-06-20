@@ -10,6 +10,7 @@ import (
 	"github.com/brongineer/helium/env"
 	ferrors "github.com/brongineer/helium/errors"
 	"github.com/brongineer/helium/flag"
+	"github.com/brongineer/helium/parser"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -233,12 +234,20 @@ type custom struct {
 	field int
 }
 
-func parser(input string) (any, error) {
-	v, err := strconv.Atoi(input)
+type customParser struct {
+	*parser.EmbeddedParser
+}
+
+func (p *customParser) ParseCmd(s string) (any, error) {
+	v, err := strconv.Atoi(s)
 	if err != nil {
 		return nil, err
 	}
 	return &custom{field: v}, nil
+}
+
+func (p *customParser) ParseEnv(s string) (any, error) {
+	return nil, nil
 }
 
 func TestFlagSet_Parse(t *testing.T) {
@@ -602,7 +611,7 @@ func TestFlagSet_Parse(t *testing.T) {
 			name: "custom flag no error",
 			flagSet: func() *FlagSet {
 				fs := NewFlagSet()
-				CustomFlag[custom](fs, "sample", flag.CommandLineParser(parser))
+				CustomFlag[custom](fs, "sample", flag.Parser(&customParser{&parser.EmbeddedParser{}}))
 				return fs
 			},
 			expected: expected{
@@ -617,7 +626,7 @@ func TestFlagSet_Parse(t *testing.T) {
 			name: "custom flag parse error",
 			flagSet: func() *FlagSet {
 				fs := NewFlagSet()
-				CustomFlag[custom](fs, "sample", flag.CommandLineParser(parser))
+				CustomFlag[custom](fs, "sample", flag.Parser(&customParser{&parser.EmbeddedParser{}}))
 				return fs
 			},
 			expected: expected{

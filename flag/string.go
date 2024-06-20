@@ -10,27 +10,36 @@ type String struct {
 	*fstring
 }
 
-func (f *String) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type stringParser struct {
+	*embeddedParser
+}
+
+func defaultStringParser() *stringParser {
+	return &stringParser{&embeddedParser{}}
+}
+
+func (p *stringParser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	f.value = &input
-	f.visited = true
-	return nil
+	parsed := input
+	return &parsed, nil
 }
 
-func (f *String) FromEnvVariable(input string) error {
-	f.value = &input
-	f.visited = true
-	return nil
+func (p *stringParser) ParseEnv(input string) (any, error) {
+	parsed := input
+	return &parsed, nil
 }
 
 func NewString(name string, opts ...Option) *String {
 	f := newFlag[string](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultStringParser())
+	}
 	return &String{f}
 }

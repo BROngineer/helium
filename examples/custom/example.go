@@ -8,6 +8,7 @@ import (
 
 	"github.com/brongineer/helium"
 	"github.com/brongineer/helium/flag"
+	"github.com/brongineer/helium/parser"
 )
 
 type params struct {
@@ -28,7 +29,11 @@ type logParams struct {
 	DevMode   bool   `json:"devMode"`
 }
 
-func parser[T any](input string) (any, error) {
+type customParser[T any] struct {
+	*parser.EmbeddedParser
+}
+
+func (p *customParser[T]) ParseCmd(input string) (any, error) {
 	var (
 		b    []byte
 		err  error
@@ -47,10 +52,18 @@ func parser[T any](input string) (any, error) {
 	return &opts, nil
 }
 
+func (p *customParser[T]) ParseEnv(_ string) (any, error) {
+	return nil, nil
+}
+
+func newCustomParser[T any]() *customParser[T] {
+	return &customParser[T]{&parser.EmbeddedParser{}}
+}
+
 func parse(args []string) (params, error) {
 	fs := helium.NewFlagSet()
-	helium.CustomFlag[srvParams](fs, "server-config", flag.CommandLineParser(parser[srvParams]))
-	helium.CustomFlag[logParams](fs, "log-config", flag.CommandLineParser(parser[logParams]))
+	helium.CustomFlag[srvParams](fs, "server-config", flag.Parser(newCustomParser[srvParams]()))
+	helium.CustomFlag[logParams](fs, "log-config", flag.Parser(newCustomParser[logParams]()))
 
 	if err := fs.Parse(args); err != nil {
 		return params{}, err

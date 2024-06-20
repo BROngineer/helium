@@ -12,30 +12,37 @@ type StringSlice struct {
 	*stringSlice
 }
 
-func (f *StringSlice) FromCommandLine(input string) error {
-	var empty string
-	if input == empty {
-		return errors.NoValueProvided(f.Name())
-	}
-	v := strings.Split(input, f.Separator())
-	if f.IsVisited() {
-		stored := DerefOrDie[[]string](f.Value())
-		v = append(stored, v...)
-	}
-	f.value = &v
-	f.visited = true
-	return nil
+type stringSliceParser struct {
+	*embeddedParser
 }
 
-func (f *StringSlice) FromEnvVariable(input string) error {
-	v := strings.Split(input, f.Separator())
-	f.value = &v
-	f.visited = true
-	return nil
+func defaultStringSliceParser() *stringSliceParser {
+	return &stringSliceParser{&embeddedParser{}}
+}
+
+func (p *stringSliceParser) ParseCmd(input string) (any, error) {
+	var empty string
+	if input == empty {
+		return nil, errors.ErrNoValueProvided
+	}
+	parsed := strings.Split(input, p.Separator())
+	if p.IsVisited() {
+		stored := DerefOrDie[[]string](p.CurrentValue())
+		parsed = append(stored, parsed...)
+	}
+	return &parsed, nil
+}
+
+func (p *stringSliceParser) ParseEnv(input string) (any, error) {
+	parsed := strings.Split(input, p.Separator())
+	return &parsed, nil
 }
 
 func NewStringSlice(name string, opts ...Option) *StringSlice {
 	f := newFlag[[]string](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultStringSliceParser())
+	}
 	return &StringSlice{f}
 }

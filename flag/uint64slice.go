@@ -13,46 +13,53 @@ type Uint64Slice struct {
 	*uint64Slice
 }
 
-func (f *Uint64Slice) FromCommandLine(input string) error {
+type uint64SliceParser struct {
+	*embeddedParser
+}
+
+func defaultUint64SliceParser() *uint64SliceParser {
+	return &uint64SliceParser{&embeddedParser{}}
+}
+
+func (p *uint64SliceParser) ParseCmd(input string) (any, error) {
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	s := strings.Split(input, f.Separator())
+	s := strings.Split(input, p.Separator())
 	parsed := make([]uint64, 0, len(s))
 	for _, el := range s {
 		v, err := strconv.ParseUint(el, 10, 64)
 		if err != nil {
-			return errors.ParseError(f.Name(), err)
+			return nil, err
 		}
 		parsed = append(parsed, v)
 	}
-	if f.IsVisited() {
-		stored := DerefOrDie[[]uint64](f.Value())
+	if p.IsVisited() {
+		stored := DerefOrDie[[]uint64](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
-func (f *Uint64Slice) FromEnvVariable(input string) error {
-	s := strings.Split(input, f.Separator())
+func (p *uint64SliceParser) ParseEnv(input string) (any, error) {
+	s := strings.Split(input, p.Separator())
 	parsed := make([]uint64, 0, len(s))
 	for _, el := range s {
-		v, err := strconv.ParseUint(el, 10, 8)
+		v, err := strconv.ParseUint(el, 10, 64)
 		if err != nil {
-			return errors.ParseError(f.Name(), err)
+			return nil, err
 		}
 		parsed = append(parsed, v)
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
 func NewUint64Slice(name string, opts ...Option) *Uint64Slice {
 	f := newFlag[[]uint64](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultUint64SliceParser())
+	}
 	return &Uint64Slice{f}
 }

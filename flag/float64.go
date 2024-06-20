@@ -12,38 +12,45 @@ type Float64 struct {
 	*ffloat64
 }
 
-func (f *Float64) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type float64Parser struct {
+	*embeddedParser
+}
+
+func defaultFloat64Parser() *float64Parser {
+	return &float64Parser{&embeddedParser{}}
+}
+
+func (p *float64Parser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	v, err := strconv.ParseFloat(input, 64)
+	parsed, err := strconv.ParseFloat(input, 64)
 	if err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	f.value = &v
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
-func (f *Float64) FromEnvVariable(input string) error {
+func (p *float64Parser) ParseEnv(input string) (any, error) {
 	var (
 		parsed float64
 		err    error
 	)
-	if parsed, err = strconv.ParseFloat(input, 32); err != nil {
-		return errors.ParseError(f.Name(), err)
+	if parsed, err = strconv.ParseFloat(input, 64); err != nil {
+		return nil, err
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
 func NewFloat64(name string, opts ...Option) *Float64 {
 	f := newFlag[float64](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultFloat64Parser())
+	}
 	return &Float64{f}
 }

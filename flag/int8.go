@@ -12,40 +12,47 @@ type Int8 struct {
 	*fint8
 }
 
-func (f *Int8) FromCommandLine(input string) error {
-	if f.IsVisited() {
-		return errors.FlagVisited(f.Name())
+type int8Parser struct {
+	*embeddedParser
+}
+
+func defaultInt8Parser() *int8Parser {
+	return &int8Parser{&embeddedParser{}}
+}
+
+func (p *int8Parser) ParseCmd(input string) (any, error) {
+	if p.IsVisited() {
+		return nil, errors.ErrFlagVisited
 	}
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	parsed, err := strconv.ParseInt(input, 10, 8)
+	v, err := strconv.ParseInt(input, 10, 8)
 	if err != nil {
-		return errors.ParseError(f.Name(), err)
+		return nil, err
 	}
-	v := int8(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := int8(v)
+	return &parsed, nil
 }
 
-func (f *Int8) FromEnvVariable(value string) error {
+func (p *int8Parser) ParseEnv(value string) (any, error) {
 	var (
-		parsed int64
-		err    error
+		v   int64
+		err error
 	)
-	if parsed, err = strconv.ParseInt(value, 10, 8); err != nil {
-		return errors.ParseError(f.Name(), err)
+	if v, err = strconv.ParseInt(value, 10, 8); err != nil {
+		return nil, err
 	}
-	v := int8(parsed)
-	f.value = &v
-	f.visited = true
-	return nil
+	parsed := int8(v)
+	return &parsed, nil
 }
 
 func NewInt8(name string, opts ...Option) *Int8 {
 	f := newFlag[int8](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultInt8Parser())
+	}
 	return &Int8{f}
 }

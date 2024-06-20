@@ -13,46 +13,53 @@ type Uint16Slice struct {
 	*uint16Slice
 }
 
-func (f *Uint16Slice) FromCommandLine(input string) error {
+type uint16SliceParser struct {
+	*embeddedParser
+}
+
+func defaultUint16SliceParser() *uint16SliceParser {
+	return &uint16SliceParser{&embeddedParser{}}
+}
+
+func (p *uint16SliceParser) ParseCmd(input string) (any, error) {
 	var empty string
 	if input == empty {
-		return errors.NoValueProvided(f.Name())
+		return nil, errors.ErrNoValueProvided
 	}
-	s := strings.Split(input, f.Separator())
+	s := strings.Split(input, p.Separator())
 	parsed := make([]uint16, 0, len(s))
 	for _, el := range s {
 		v, err := strconv.ParseUint(el, 10, 16)
 		if err != nil {
-			return errors.ParseError(f.Name(), err)
+			return nil, err
 		}
 		parsed = append(parsed, uint16(v))
 	}
-	if f.IsVisited() {
-		stored := DerefOrDie[[]uint16](f.Value())
+	if p.IsVisited() {
+		stored := DerefOrDie[[]uint16](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
-func (f *Uint16Slice) FromEnvVariable(input string) error {
-	s := strings.Split(input, f.Separator())
+func (p *uint16SliceParser) ParseEnv(input string) (any, error) {
+	s := strings.Split(input, p.Separator())
 	parsed := make([]uint16, 0, len(s))
 	for _, el := range s {
-		v, err := strconv.ParseUint(el, 10, 8)
+		v, err := strconv.ParseUint(el, 10, 16)
 		if err != nil {
-			return errors.ParseError(f.Name(), err)
+			return nil, err
 		}
 		parsed = append(parsed, uint16(v))
 	}
-	f.value = &parsed
-	f.visited = true
-	return nil
+	return &parsed, nil
 }
 
 func NewUint16Slice(name string, opts ...Option) *Uint16Slice {
 	f := newFlag[[]uint16](name)
 	applyForFlag(f, opts...)
+	if f.Parser() == nil {
+		f.setParser(defaultUint16SliceParser())
+	}
 	return &Uint16Slice{f}
 }
