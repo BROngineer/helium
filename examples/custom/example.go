@@ -52,10 +52,6 @@ func (p *customParser[T]) ParseCmd(input string) (any, error) {
 	return &opts, nil
 }
 
-func (p *customParser[T]) ParseEnv(_ string) (any, error) {
-	return nil, nil
-}
-
 func newCustomParser[T any]() *customParser[T] {
 	return &customParser[T]{&parser.EmbeddedParser{}}
 }
