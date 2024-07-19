@@ -9,7 +9,7 @@ import (
 
 type int16Slice = flag[[]int16]
 
-type Int16Slice struct {
+type Int16SliceFlag struct {
 	*int16Slice
 }
 
@@ -35,7 +35,7 @@ func (p *int16SliceParser) ParseCmd(input string) (any, error) {
 		}
 		parsed = append(parsed, int16(v))
 	}
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		stored := DerefOrDie[[]int16](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
@@ -55,11 +55,11 @@ func (p *int16SliceParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewInt16Slice(name string, opts ...Option) *Int16Slice {
+func Int16Slice(name string, opts ...Option) *Int16SliceFlag {
 	f := newFlag[[]int16](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultInt16SliceParser())
 	}
-	return &Int16Slice{f}
+	return &Int16SliceFlag{f}
 }

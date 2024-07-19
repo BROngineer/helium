@@ -11,15 +11,18 @@ type replacement struct {
 }
 
 type VarNameConstructor struct {
-	prefix      string
-	capitalize  bool
-	replacement replacement
+	prefix             string
+	capitalize         bool
+	varNameReplacement replacement
 }
 
-func Constructor(charOld, charNew string, opts ...Option) *VarNameConstructor {
-	c := &VarNameConstructor{replacement: replacement{old: charOld, new: charNew}}
+func Constructor(opts ...Option) *VarNameConstructor {
+	c := &VarNameConstructor{}
 	for _, opt := range opts {
 		opt.apply(c)
+	}
+	if c.varNameReplacement == (replacement{}) {
+		c.varNameReplacement = replacement{old: "", new: ""}
 	}
 	return c
 }
@@ -32,8 +35,12 @@ func (c *VarNameConstructor) setCapitalize() {
 	c.capitalize = true
 }
 
+func (c *VarNameConstructor) setReplacement(oldChar, newChar string) {
+	c.varNameReplacement = replacement{old: oldChar, new: newChar}
+}
+
 func (c *VarNameConstructor) VarFromFlagName(name string) string {
-	varName := strings.ReplaceAll(name, c.replacement.old, c.replacement.new)
+	varName := strings.ReplaceAll(name, c.varNameReplacement.old, c.varNameReplacement.new)
 	if c.prefix != "" {
 		varName = fmt.Sprintf("%s_%s", c.prefix, varName)
 	}

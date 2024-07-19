@@ -10,10 +10,12 @@ import (
 const defaultSliceSeparator = ","
 
 type flagParser interface {
-	SetVisited(bool)
+	SetFromEnv(bool)
+	SetFromCmd(bool)
 	SetSeparator(string)
 	SetCurrentValue(any)
-	IsVisited() bool
+	IsSetFromEnv() bool
+	IsSetFromCmd() bool
 	Separator() string
 	CurrentValue() any
 	ParseCmd(string) (any, error)
@@ -25,11 +27,12 @@ type flag[T any] struct {
 	description  string
 	shorthand    string
 	shared       bool
-	visited      bool
 	defaultValue *T
 	value        *T
 	separator    string
 	parser       flagParser
+	setFromEnv   bool
+	setFromCmd   bool
 }
 
 func (f *flag[T]) Value() any {
@@ -62,12 +65,16 @@ func (f *flag[T]) IsShared() bool {
 	return f.shared
 }
 
-func (f *flag[T]) IsVisited() bool {
-	return f.visited
-}
-
 func (f *flag[T]) Parser() flagParser {
 	return f.parser
+}
+
+func (f *flag[T]) IsSetFromEnv() bool {
+	return f.setFromEnv
+}
+
+func (f *flag[T]) IsSetFromCmd() bool {
+	return f.setFromCmd
 }
 
 func newFlag[T any](name string) *flag[T] {
@@ -107,12 +114,13 @@ func (f *flag[T]) setParser(p flagParser) {
 }
 
 func (f *flag[T]) reflectStateToParser() {
-	f.parser.SetVisited(f.IsVisited())
+	f.parser.SetFromEnv(f.IsSetFromEnv())
+	f.parser.SetFromCmd(f.IsSetFromCmd())
 	f.parser.SetSeparator(f.Separator())
 	f.parser.SetCurrentValue(f.value)
 }
 
-func (f *flag[T]) FromCommandLine(input string) error {
+func (f *flag[T]) parseInput(input string, parseFunc func(string) (any, error)) error {
 	var (
 		val    any
 		parsed *T
@@ -122,38 +130,36 @@ func (f *flag[T]) FromCommandLine(input string) error {
 		return errors.ErrNoParserDefined
 	}
 	f.reflectStateToParser()
-	val, err = f.parser.ParseCmd(input)
+	val, err = parseFunc(input)
 	if err != nil {
 		return errors.ParseError(f.Name(), err)
 	}
-	parsed, err = value[T](val)
+	parsed, err = typedValuePtr[T](val)
 	if err != nil {
 		return errors.ParseError(f.Name(), err)
 	}
 	f.value = parsed
-	f.visited = true
 	return nil
 }
 
-func (f *flag[T]) FromEnvVariable(input string) error {
-	var (
-		val    any
-		parsed *T
-		err    error
-	)
+func (f *flag[T]) FromCommandLine(input string) error {
 	if f.parser == nil {
-		return errors.ErrNoParserDefined
+		return errors.NoParserDefined(f.Name())
 	}
-	f.reflectStateToParser()
-	val, err = f.parser.ParseCmd(input)
-	if err != nil {
-		return errors.ParseError(f.Name(), err)
+	err := f.parseInput(input, f.parser.ParseCmd)
+	if err == nil {
+		f.setFromCmd = true
 	}
-	parsed, err = value[T](val)
-	if err != nil {
-		return errors.ParseError(f.Name(), err)
+	return err
+}
+
+func (f *flag[T]) FromEnvVariable(input string) error {
+	if f.parser == nil {
+		return errors.NoParserDefined(f.Name())
 	}
-	f.value = parsed
-	f.visited = true
-	return nil
+	err := f.parseInput(input, f.parser.ParseEnv)
+	if err == nil {
+		f.setFromEnv = true
+	}
+	return err
 }

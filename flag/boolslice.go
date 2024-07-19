@@ -9,7 +9,7 @@ import (
 
 type boolSlice = flag[[]bool]
 
-type BoolSlice struct {
+type BoolSliceFlag struct {
 	*boolSlice
 }
 
@@ -35,7 +35,7 @@ func (p *boolSliceParser) ParseCmd(input string) (any, error) {
 		}
 		parsed = append(parsed, v)
 	}
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		stored := DerefOrDie[[]bool](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
@@ -55,11 +55,11 @@ func (p *boolSliceParser) ParseEnv(value string) (any, error) {
 	return &parsed, nil
 }
 
-func NewBoolSlice(name string, opts ...Option) *BoolSlice {
+func BoolSlice(name string, opts ...Option) *BoolSliceFlag {
 	f := newFlag[[]bool](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultBoolSliceParser())
 	}
-	return &BoolSlice{f}
+	return &BoolSliceFlag{f}
 }

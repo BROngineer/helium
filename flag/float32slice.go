@@ -9,7 +9,7 @@ import (
 
 type float32Slice = flag[[]float32]
 
-type Float32Slice struct {
+type Float32SliceFlag struct {
 	*float32Slice
 }
 
@@ -35,7 +35,7 @@ func (p *float32SliceParser) ParseCmd(input string) (any, error) {
 		}
 		parsed = append(parsed, float32(v))
 	}
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		stored := DerefOrDie[[]float32](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
@@ -55,11 +55,11 @@ func (p *float32SliceParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewFloat32Slice(name string, opts ...Option) *Float32Slice {
+func Float32Slice(name string, opts ...Option) *Float32SliceFlag {
 	f := newFlag[[]float32](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultFloat32SliceParser())
 	}
-	return &Float32Slice{f}
+	return &Float32SliceFlag{f}
 }

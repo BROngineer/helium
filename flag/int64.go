@@ -8,7 +8,7 @@ import (
 
 type fint64 = flag[int64]
 
-type Int64 struct {
+type Int64Flag struct {
 	*fint64
 }
 
@@ -21,7 +21,7 @@ func defaultInt64Parser() *int64Parser {
 }
 
 func (p *int64Parser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -47,11 +47,11 @@ func (p *int64Parser) ParseEnv(value string) (any, error) {
 	return &parsed, nil
 }
 
-func NewInt64(name string, opts ...Option) *Int64 {
+func Int64(name string, opts ...Option) *Int64Flag {
 	f := newFlag[int64](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultInt64Parser())
 	}
-	return &Int64{f}
+	return &Int64Flag{f}
 }

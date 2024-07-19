@@ -9,7 +9,7 @@ import (
 
 type int64Slice = flag[[]int64]
 
-type Int64Slice struct {
+type Int64SliceFlag struct {
 	*int64Slice
 }
 
@@ -35,7 +35,7 @@ func (p *int64SliceParser) ParseCmd(input string) (any, error) {
 		}
 		parsed = append(parsed, v)
 	}
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		stored := DerefOrDie[[]int64](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
@@ -55,11 +55,11 @@ func (p *int64SliceParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewInt64Slice(name string, opts ...Option) *Int64Slice {
+func Int64Slice(name string, opts ...Option) *Int64SliceFlag {
 	f := newFlag[[]int64](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultInt64SliceParser())
 	}
-	return &Int64Slice{f}
+	return &Int64SliceFlag{f}
 }

@@ -6,7 +6,7 @@ import (
 
 type counter = flag[int]
 
-type Counter struct {
+type CounterFlag struct {
 	*counter
 }
 
@@ -47,7 +47,7 @@ func (p *counterParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewCounter(name string, opts ...Option) *Counter {
+func Counter(name string, opts ...Option) *CounterFlag {
 	f := newFlag[int](name)
 	applyForFlag(f, opts...)
 	if f.defaultValue == nil {
@@ -57,5 +57,5 @@ func NewCounter(name string, opts ...Option) *Counter {
 	if f.Parser() == nil {
 		f.setParser(defaultCounterParser())
 	}
-	return &Counter{f}
+	return &CounterFlag{f}
 }

@@ -7,11 +7,11 @@ import (
 	"github.com/brongineer/helium/errors"
 )
 
-// value returns a pointer to the value of the specified flag in the given FlagSet.
+// typedValuePtr returns a pointer to the value of the specified flag in the given FlagSet.
 // If the flag does not exist, it returns an error with the message "unknown flag".
 // If the value is nil, it returns an error with the message "value is nil".
 // If the type of the value does not match the specified type, it returns an error with the message "wrong type".
-func value[T any](v any) (*T, error) {
+func typedValuePtr[T any](v any) (*T, error) {
 	var (
 		valuePtr *T
 		ok       bool
@@ -28,7 +28,7 @@ func value[T any](v any) (*T, error) {
 // it prints the error message to stderr and exits the program with code 1. If the pointer is nil,
 // it prints an error message to stderr and exits the program with code 1. It returns the dereferenced value.
 func DerefOrDie[T any](v any) T {
-	p, err := value[T](v)
+	p, err := typedValuePtr[T](v)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		os.Exit(1)
@@ -44,7 +44,7 @@ func DerefOrDie[T any](v any) T {
 // If `err` is not nil, an error message is printed to stderr and the program exits with code 1.
 // The function is used to simplify error handling in flag retrieval functions.
 func PtrOrDie[T any](v any) *T {
-	p, err := value[T](v)
+	p, err := typedValuePtr[T](v)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %v\n", err.Error())
 		os.Exit(1)

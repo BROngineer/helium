@@ -8,7 +8,7 @@ import (
 
 type fint8 = flag[int8]
 
-type Int8 struct {
+type Int8Flag struct {
 	*fint8
 }
 
@@ -21,7 +21,7 @@ func defaultInt8Parser() *int8Parser {
 }
 
 func (p *int8Parser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -48,11 +48,11 @@ func (p *int8Parser) ParseEnv(value string) (any, error) {
 	return &parsed, nil
 }
 
-func NewInt8(name string, opts ...Option) *Int8 {
+func Int8(name string, opts ...Option) *Int8Flag {
 	f := newFlag[int8](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultInt8Parser())
 	}
-	return &Int8{f}
+	return &Int8Flag{f}
 }
