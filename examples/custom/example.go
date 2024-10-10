@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/brongineer/helium"
 	"github.com/brongineer/helium/flag"
+	"github.com/brongineer/helium/flagset"
 	"github.com/brongineer/helium/parser"
 )
 
@@ -57,17 +57,18 @@ func newCustomParser[T any]() *customParser[T] {
 }
 
 func parse(args []string) (params, error) {
-	fs := helium.NewFlagSet()
-	helium.CustomFlag[srvParams](fs, "server-config", flag.Parser(newCustomParser[srvParams]()))
-	helium.CustomFlag[logParams](fs, "log-config", flag.Parser(newCustomParser[logParams]()))
+	fs := flagset.New().
+		BindFlag(flag.Typed[srvParams]("server-config", flag.Parser(newCustomParser[srvParams]()))).
+		BindFlag(flag.Typed[logParams]("log-config", flag.Parser(newCustomParser[logParams]()))).
+		Build()
 
 	if err := fs.Parse(args); err != nil {
 		return params{}, err
 	}
 
 	return params{
-		serverOpts: helium.GetCustomFlag[srvParams](fs, "server-config"),
-		loggerOpts: helium.GetCustomFlag[logParams](fs, "log-config"),
+		serverOpts: flagset.GetTypedFlag[srvParams](fs, "server-config"),
+		loggerOpts: flagset.GetTypedFlag[logParams](fs, "log-config"),
 	}, nil
 }
 

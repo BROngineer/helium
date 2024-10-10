@@ -8,7 +8,7 @@ import (
 
 type ffloat64 = flag[float64]
 
-type Float64 struct {
+type Float64Flag struct {
 	*ffloat64
 }
 
@@ -21,7 +21,7 @@ func defaultFloat64Parser() *float64Parser {
 }
 
 func (p *float64Parser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -46,11 +46,11 @@ func (p *float64Parser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewFloat64(name string, opts ...Option) *Float64 {
+func Float64(name string, opts ...Option) *Float64Flag {
 	f := newFlag[float64](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultFloat64Parser())
 	}
-	return &Float64{f}
+	return &Float64Flag{f}
 }

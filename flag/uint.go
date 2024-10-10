@@ -8,7 +8,7 @@ import (
 
 type fuint = flag[uint]
 
-type Uint struct {
+type UintFlag struct {
 	*fuint
 }
 
@@ -21,7 +21,7 @@ func defaultUintParser() *uintParser {
 }
 
 func (p *uintParser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -48,11 +48,11 @@ func (p *uintParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewUint(name string, opts ...Option) *Uint {
+func Uint(name string, opts ...Option) *UintFlag {
 	f := newFlag[uint](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultUintParser())
 	}
-	return &Uint{f}
+	return &UintFlag{f}
 }

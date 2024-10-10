@@ -15,7 +15,9 @@ type flagPropertyGetter interface {
 	Shorthand() string
 	Separator() string
 	IsShared() bool
-	IsVisited() bool
+	// IsVisited() bool
+	IsSetFromEnv() bool
+	IsSetFromCmd() bool
 	FromCommandLine(string) error
 	FromEnvVariable(string) error
 	Parser() flagParser
@@ -100,7 +102,7 @@ func assertGetFlag[T any](t *testing.T, f flagPropertyGetter, tt getFlagTest[T])
 			return
 		}
 		assert.NoError(t, f.FromCommandLine(*tt.input))
-		assert.True(t, f.IsVisited())
+		assert.True(t, f.IsSetFromCmd())
 	}
 	assert.Equal(t, *tt.wanted.some, DerefOrDie[T](f.Value()))
 	assert.Equal(t, tt.wanted.some, PtrOrDie[T](f.Value()))
@@ -148,7 +150,7 @@ func TestFlag_Custom(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewCustom[custom](tt.name, tt.opts...)
+			f := Typed[custom](tt.name, tt.opts...)
 			assertFlag[custom](t, f, tt)
 		})
 	}
@@ -183,7 +185,7 @@ func TestFlag_GetCustom(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewCustom[custom](tt.name, tt.opts...)
+			f := Typed[custom](tt.name, tt.opts...)
 			assertGetFlag[custom](t, f, tt)
 		})
 	}
@@ -221,7 +223,7 @@ func TestFlag_String(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewString(tt.name, tt.opts...)
+			f := String(tt.name, tt.opts...)
 			assertFlag[string](t, f, tt)
 		})
 	}
@@ -262,7 +264,7 @@ func TestFlag_GetString(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewString(tt.name, tt.opts...)
+			f := String(tt.name, tt.opts...)
 			assertGetFlag[string](t, f, tt)
 		})
 	}
@@ -300,7 +302,7 @@ func TestFlag_Duration(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewDuration(tt.name, tt.opts...)
+			f := Duration(tt.name, tt.opts...)
 			assertFlag[time.Duration](t, f, tt)
 		})
 	}
@@ -350,7 +352,7 @@ func TestFlag_GetDuration(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewDuration(tt.name, tt.opts...)
+			f := Duration(tt.name, tt.opts...)
 			assertGetFlag[time.Duration](t, f, tt)
 		})
 	}
@@ -388,7 +390,7 @@ func TestFlag_Bool(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewBool(tt.name, tt.opts...)
+			f := Bool(tt.name, tt.opts...)
 			assertFlag[bool](t, f, tt)
 		})
 	}
@@ -447,7 +449,7 @@ func TestFlag_GetBool(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewBool(tt.name, tt.opts...)
+			f := Bool(tt.name, tt.opts...)
 			assertGetFlag[bool](t, f, tt)
 		})
 	}
@@ -482,7 +484,7 @@ func TestFlag_Int(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt(tt.name, tt.opts...)
+			f := Int(tt.name, tt.opts...)
 			assertFlag[int](t, f, tt)
 		})
 	}
@@ -523,7 +525,7 @@ func TestFlag_GetInt(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt(tt.name, tt.opts...)
+			f := Int(tt.name, tt.opts...)
 			assertGetFlag[int](t, f, tt)
 		})
 	}
@@ -558,7 +560,7 @@ func TestFlag_Int8(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt8(tt.name, tt.opts...)
+			f := Int8(tt.name, tt.opts...)
 			assertFlag[int8](t, f, tt)
 		})
 	}
@@ -599,7 +601,7 @@ func TestFlag_GetInt8(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt8(tt.name, tt.opts...)
+			f := Int8(tt.name, tt.opts...)
 			assertGetFlag[int8](t, f, tt)
 		})
 	}
@@ -634,7 +636,7 @@ func TestFlag_Int16(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt16(tt.name, tt.opts...)
+			f := Int16(tt.name, tt.opts...)
 			assertFlag[int16](t, f, tt)
 		})
 	}
@@ -675,7 +677,7 @@ func TestFlag_GetInt16(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt16(tt.name, tt.opts...)
+			f := Int16(tt.name, tt.opts...)
 			assertGetFlag[int16](t, f, tt)
 		})
 	}
@@ -710,7 +712,7 @@ func TestFlag_Int32(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt32(tt.name, tt.opts...)
+			f := Int32(tt.name, tt.opts...)
 			assertFlag[int32](t, f, tt)
 		})
 	}
@@ -751,7 +753,7 @@ func TestFlag_GetInt32(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt32(tt.name, tt.opts...)
+			f := Int32(tt.name, tt.opts...)
 			assertGetFlag[int32](t, f, tt)
 		})
 	}
@@ -786,7 +788,7 @@ func TestFlag_Int64(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt64(tt.name, tt.opts...)
+			f := Int64(tt.name, tt.opts...)
 			assertFlag[int64](t, f, tt)
 		})
 	}
@@ -827,7 +829,7 @@ func TestFlag_GetInt64(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt64(tt.name, tt.opts...)
+			f := Int64(tt.name, tt.opts...)
 			assertGetFlag[int64](t, f, tt)
 		})
 	}
@@ -862,7 +864,7 @@ func TestFlag_Uint(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint(tt.name, tt.opts...)
+			f := Uint(tt.name, tt.opts...)
 			assertFlag[uint](t, f, tt)
 		})
 	}
@@ -903,7 +905,7 @@ func TestFlag_GetUint(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint(tt.name, tt.opts...)
+			f := Uint(tt.name, tt.opts...)
 			assertGetFlag[uint](t, f, tt)
 		})
 	}
@@ -938,7 +940,7 @@ func TestFlag_Uint8(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint8(tt.name, tt.opts...)
+			f := Uint8(tt.name, tt.opts...)
 			assertFlag[uint8](t, f, tt)
 		})
 	}
@@ -979,7 +981,7 @@ func TestFlag_GetUint8(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint8(tt.name, tt.opts...)
+			f := Uint8(tt.name, tt.opts...)
 			assertGetFlag[uint8](t, f, tt)
 		})
 	}
@@ -1014,7 +1016,7 @@ func TestFlag_Uint16(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint16(tt.name, tt.opts...)
+			f := Uint16(tt.name, tt.opts...)
 			assertFlag[uint16](t, f, tt)
 		})
 	}
@@ -1055,7 +1057,7 @@ func TestFlag_GetUint16(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint16(tt.name, tt.opts...)
+			f := Uint16(tt.name, tt.opts...)
 			assertGetFlag[uint16](t, f, tt)
 		})
 	}
@@ -1090,7 +1092,7 @@ func TestFlag_Uint32(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint32(tt.name, tt.opts...)
+			f := Uint32(tt.name, tt.opts...)
 			assertFlag[uint32](t, f, tt)
 		})
 	}
@@ -1131,7 +1133,7 @@ func TestFlag_GetUint32(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint32(tt.name, tt.opts...)
+			f := Uint32(tt.name, tt.opts...)
 			assertGetFlag[uint32](t, f, tt)
 		})
 	}
@@ -1166,7 +1168,7 @@ func TestFlag_Uint64(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint64(tt.name, tt.opts...)
+			f := Uint64(tt.name, tt.opts...)
 			assertFlag[uint64](t, f, tt)
 		})
 	}
@@ -1207,7 +1209,7 @@ func TestFlag_GetUint64(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint64(tt.name, tt.opts...)
+			f := Uint64(tt.name, tt.opts...)
 			assertGetFlag[uint64](t, f, tt)
 		})
 	}
@@ -1242,7 +1244,7 @@ func TestFlag_Float32(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewFloat32(tt.name, tt.opts...)
+			f := Float32(tt.name, tt.opts...)
 			assertFlag[float32](t, f, tt)
 		})
 	}
@@ -1283,7 +1285,7 @@ func TestFlag_GetFloat32(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewFloat32(tt.name, tt.opts...)
+			f := Float32(tt.name, tt.opts...)
 			assertGetFlag[float32](t, f, tt)
 		})
 	}
@@ -1318,7 +1320,7 @@ func TestFlag_Float64(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewFloat64(tt.name, tt.opts...)
+			f := Float64(tt.name, tt.opts...)
 			assertFlag[float64](t, f, tt)
 		})
 	}
@@ -1359,7 +1361,7 @@ func TestFlag_GetFloat64(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewFloat64(tt.name, tt.opts...)
+			f := Float64(tt.name, tt.opts...)
 			assertGetFlag[float64](t, f, tt)
 		})
 	}
@@ -1396,7 +1398,7 @@ func TestFlag_IntSlice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewIntSlice(tt.name, tt.opts...)
+			f := IntSlice(tt.name, tt.opts...)
 			assertFlag[[]int](t, f, tt)
 		})
 	}
@@ -1446,7 +1448,7 @@ func TestFlag_GetIntSlice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewIntSlice(tt.name, tt.opts...)
+			f := IntSlice(tt.name, tt.opts...)
 			assertGetFlag[[]int](t, f, tt)
 		})
 	}
@@ -1483,7 +1485,7 @@ func TestFlag_Int8Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt8Slice(tt.name, tt.opts...)
+			f := Int8Slice(tt.name, tt.opts...)
 			assertFlag[[]int8](t, f, tt)
 		})
 	}
@@ -1533,7 +1535,7 @@ func TestFlag_GetInt8Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt8Slice(tt.name, tt.opts...)
+			f := Int8Slice(tt.name, tt.opts...)
 			assertGetFlag[[]int8](t, f, tt)
 		})
 	}
@@ -1570,7 +1572,7 @@ func TestFlag_Int16Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt16Slice(tt.name, tt.opts...)
+			f := Int16Slice(tt.name, tt.opts...)
 			assertFlag[[]int16](t, f, tt)
 		})
 	}
@@ -1620,7 +1622,7 @@ func TestFlag_GetInt16Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt16Slice(tt.name, tt.opts...)
+			f := Int16Slice(tt.name, tt.opts...)
 			assertGetFlag[[]int16](t, f, tt)
 		})
 	}
@@ -1657,7 +1659,7 @@ func TestFlag_Int32Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt32Slice(tt.name, tt.opts...)
+			f := Int32Slice(tt.name, tt.opts...)
 			assertFlag[[]int32](t, f, tt)
 		})
 	}
@@ -1707,7 +1709,7 @@ func TestFlag_GetInt32Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt32Slice(tt.name, tt.opts...)
+			f := Int32Slice(tt.name, tt.opts...)
 			assertGetFlag[[]int32](t, f, tt)
 		})
 	}
@@ -1744,7 +1746,7 @@ func TestFlag_Int64Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt64Slice(tt.name, tt.opts...)
+			f := Int64Slice(tt.name, tt.opts...)
 			assertFlag[[]int64](t, f, tt)
 		})
 	}
@@ -1794,7 +1796,7 @@ func TestFlag_GetInt64Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewInt64Slice(tt.name, tt.opts...)
+			f := Int64Slice(tt.name, tt.opts...)
 			assertGetFlag[[]int64](t, f, tt)
 		})
 	}
@@ -1831,7 +1833,7 @@ func TestFlag_UintSlice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUintSlice(tt.name, tt.opts...)
+			f := UintSlice(tt.name, tt.opts...)
 			assertFlag[[]uint](t, f, tt)
 		})
 	}
@@ -1881,7 +1883,7 @@ func TestFlag_GetUintSlice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUintSlice(tt.name, tt.opts...)
+			f := UintSlice(tt.name, tt.opts...)
 			assertGetFlag[[]uint](t, f, tt)
 		})
 	}
@@ -1918,7 +1920,7 @@ func TestFlag_Uint8Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint8Slice(tt.name, tt.opts...)
+			f := Uint8Slice(tt.name, tt.opts...)
 			assertFlag[[]uint8](t, f, tt)
 		})
 	}
@@ -1968,7 +1970,7 @@ func TestFlag_GetUint8Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint8Slice(tt.name, tt.opts...)
+			f := Uint8Slice(tt.name, tt.opts...)
 			assertGetFlag[[]uint8](t, f, tt)
 		})
 	}
@@ -2005,7 +2007,7 @@ func TestFlag_Uint16Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint16Slice(tt.name, tt.opts...)
+			f := Uint16Slice(tt.name, tt.opts...)
 			assertFlag[[]uint16](t, f, tt)
 		})
 	}
@@ -2055,7 +2057,7 @@ func TestFlag_GetUint16Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint16Slice(tt.name, tt.opts...)
+			f := Uint16Slice(tt.name, tt.opts...)
 			assertGetFlag[[]uint16](t, f, tt)
 		})
 	}
@@ -2092,7 +2094,7 @@ func TestFlag_Uint32Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint32Slice(tt.name, tt.opts...)
+			f := Uint32Slice(tt.name, tt.opts...)
 			assertFlag[[]uint32](t, f, tt)
 		})
 	}
@@ -2142,7 +2144,7 @@ func TestFlag_GetUint32Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint32Slice(tt.name, tt.opts...)
+			f := Uint32Slice(tt.name, tt.opts...)
 			assertGetFlag[[]uint32](t, f, tt)
 		})
 	}
@@ -2179,7 +2181,7 @@ func TestFlag_Uint64Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint64Slice(tt.name, tt.opts...)
+			f := Uint64Slice(tt.name, tt.opts...)
 			assertFlag[[]uint64](t, f, tt)
 		})
 	}
@@ -2229,7 +2231,7 @@ func TestFlag_GetUint64Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewUint64Slice(tt.name, tt.opts...)
+			f := Uint64Slice(tt.name, tt.opts...)
 			assertGetFlag[[]uint64](t, f, tt)
 		})
 	}
@@ -2266,7 +2268,7 @@ func TestFlag_Float32Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewFloat32Slice(tt.name, tt.opts...)
+			f := Float32Slice(tt.name, tt.opts...)
 			assertFlag[[]float32](t, f, tt)
 		})
 	}
@@ -2316,7 +2318,7 @@ func TestFlag_GetFloat32Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewFloat32Slice(tt.name, tt.opts...)
+			f := Float32Slice(tt.name, tt.opts...)
 			assertGetFlag[[]float32](t, f, tt)
 		})
 	}
@@ -2353,7 +2355,7 @@ func TestFlag_Float64Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewFloat64Slice(tt.name, tt.opts...)
+			f := Float64Slice(tt.name, tt.opts...)
 			assertFlag[[]float64](t, f, tt)
 		})
 	}
@@ -2403,7 +2405,7 @@ func TestFlag_GetFloat64Slice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewFloat64Slice(tt.name, tt.opts...)
+			f := Float64Slice(tt.name, tt.opts...)
 			assertGetFlag[[]float64](t, f, tt)
 		})
 	}
@@ -2440,7 +2442,7 @@ func TestFlag_StringSlice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewStringSlice(tt.name, tt.opts...)
+			f := StringSlice(tt.name, tt.opts...)
 			assertFlag[[]string](t, f, tt)
 		})
 	}
@@ -2481,7 +2483,7 @@ func TestFlag_GetStringSlice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewStringSlice(tt.name, tt.opts...)
+			f := StringSlice(tt.name, tt.opts...)
 			assertGetFlag[[]string](t, f, tt)
 		})
 	}
@@ -2518,7 +2520,7 @@ func TestFlag_DurationSlice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewDurationSlice(tt.name, tt.opts...)
+			f := DurationSlice(tt.name, tt.opts...)
 			assertFlag[[]time.Duration](t, f, tt)
 		})
 	}
@@ -2568,7 +2570,7 @@ func TestFlag_GetDurationSlice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewDurationSlice(tt.name, tt.opts...)
+			f := DurationSlice(tt.name, tt.opts...)
 			assertGetFlag[[]time.Duration](t, f, tt)
 		})
 	}
@@ -2605,7 +2607,7 @@ func TestFlag_BoolSlice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewBoolSlice(tt.name, tt.opts...)
+			f := BoolSlice(tt.name, tt.opts...)
 			assertFlag[[]bool](t, f, tt)
 		})
 	}
@@ -2655,7 +2657,7 @@ func TestFlag_GetBoolSlice(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewBoolSlice(tt.name, tt.opts...)
+			f := BoolSlice(tt.name, tt.opts...)
 			assertGetFlag[[]bool](t, f, tt)
 		})
 	}
@@ -2693,7 +2695,7 @@ func TestFlag_Counter(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewCounter(tt.name, tt.opts...)
+			f := Counter(tt.name, tt.opts...)
 			assertFlag[int](t, f, tt)
 		})
 	}
@@ -2734,7 +2736,7 @@ func TestFlag_GetCounter(t *testing.T) {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			f := NewCounter(tt.name, tt.opts...)
+			f := Counter(tt.name, tt.opts...)
 			assertGetFlag[int](t, f, tt)
 		})
 	}

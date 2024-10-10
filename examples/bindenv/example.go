@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/brongineer/helium/env"
 	"github.com/brongineer/helium/flag"
 	"github.com/brongineer/helium/flagset"
 )
@@ -18,8 +19,18 @@ type params struct {
 	peers           []string
 }
 
+func setEnv() {
+	_ = os.Setenv("BIND_ENV_EXAMPLE_BIND_ADDRESS", "1.2.3.4")
+	_ = os.Setenv("BIND_ENV_EXAMPLE_BIND_PORT", "65535")
+}
+
+func unsetEnv() {
+	_ = os.Unsetenv("BIND_ENV_EXAMPLE_BIND_ADDRESS")
+	_ = os.Unsetenv("BIND_ENV_EXAMPLE_BIND_PORT")
+}
+
 func parse(args []string) (params, error) {
-	fs := flagset.New().
+	fs := flagset.New(env.Prefix("BIND_ENV_EXAMPLE"), env.Capitalized(), env.VarNameReplace("-", "_")).
 		BindFlag(flag.String("bind-address", flag.Description("bind listen address"), flag.DefaultValue("localhost"))).
 		BindFlag(flag.Uint32("bind-port", flag.Description("bind listen port"), flag.DefaultValue(uint32(80)))).
 		BindFlag(flag.String("log-level", flag.Description("logging level"), flag.DefaultValue("info"))).
@@ -29,6 +40,10 @@ func parse(args []string) (params, error) {
 		Build()
 
 	if err := fs.Parse(args); err != nil {
+		return params{}, err
+	}
+
+	if err := fs.BindEnvVars(); err != nil {
 		return params{}, err
 	}
 
@@ -43,6 +58,8 @@ func parse(args []string) (params, error) {
 }
 
 func main() {
+	setEnv()
+	defer unsetEnv()
 	opts, err := parse(os.Args)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "Error: %v", err)

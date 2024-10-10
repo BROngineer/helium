@@ -8,7 +8,7 @@ import (
 
 type fint = flag[int]
 
-type Int struct {
+type IntFlag struct {
 	*fint
 }
 
@@ -21,7 +21,7 @@ func defaultIntParser() *intParser {
 }
 
 func (p *intParser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -46,11 +46,11 @@ func (p *intParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewInt(name string, opts ...Option) *Int {
+func Int(name string, opts ...Option) *IntFlag {
 	f := newFlag[int](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultIntParser())
 	}
-	return &Int{f}
+	return &IntFlag{f}
 }

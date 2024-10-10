@@ -8,7 +8,7 @@ import (
 
 type fbool = flag[bool]
 
-type Bool struct {
+type BoolFlag struct {
 	*fbool
 }
 
@@ -25,7 +25,7 @@ func (p *boolParser) ParseCmd(input string) (any, error) {
 		parsed bool
 		err    error
 	)
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	switch input {
@@ -51,11 +51,11 @@ func (p *boolParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewBool(name string, opts ...Option) *Bool {
+func Bool(name string, opts ...Option) *BoolFlag {
 	f := newFlag[bool](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultBoolParser())
 	}
-	return &Bool{f}
+	return &BoolFlag{f}
 }

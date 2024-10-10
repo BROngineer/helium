@@ -8,7 +8,7 @@ import (
 
 type stringSlice = flag[[]string]
 
-type StringSlice struct {
+type StringSliceFlag struct {
 	*stringSlice
 }
 
@@ -26,7 +26,7 @@ func (p *stringSliceParser) ParseCmd(input string) (any, error) {
 		return nil, errors.ErrNoValueProvided
 	}
 	parsed := strings.Split(input, p.Separator())
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		stored := DerefOrDie[[]string](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
@@ -38,11 +38,11 @@ func (p *stringSliceParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewStringSlice(name string, opts ...Option) *StringSlice {
+func StringSlice(name string, opts ...Option) *StringSliceFlag {
 	f := newFlag[[]string](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultStringSliceParser())
 	}
-	return &StringSlice{f}
+	return &StringSliceFlag{f}
 }

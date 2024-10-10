@@ -9,7 +9,7 @@ import (
 
 type int8Slice = flag[[]int8]
 
-type Int8Slice struct {
+type Int8SliceFlag struct {
 	*int8Slice
 }
 
@@ -35,7 +35,7 @@ func (p *int8SliceParser) ParseCmd(input string) (any, error) {
 		}
 		parsed = append(parsed, int8(v))
 	}
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		stored := DerefOrDie[[]int8](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
@@ -55,11 +55,11 @@ func (p *int8SliceParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewInt8Slice(name string, opts ...Option) *Int8Slice {
+func Int8Slice(name string, opts ...Option) *Int8SliceFlag {
 	f := newFlag[[]int8](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultInt8SliceParser())
 	}
-	return &Int8Slice{f}
+	return &Int8SliceFlag{f}
 }

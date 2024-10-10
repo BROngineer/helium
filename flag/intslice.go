@@ -9,7 +9,7 @@ import (
 
 type intSlice = flag[[]int]
 
-type IntSlice struct {
+type IntSliceFlag struct {
 	*intSlice
 }
 
@@ -35,7 +35,7 @@ func (p *intSliceParser) ParseCmd(input string) (any, error) {
 		}
 		parsed = append(parsed, v)
 	}
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		stored := DerefOrDie[[]int](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
@@ -43,7 +43,6 @@ func (p *intSliceParser) ParseCmd(input string) (any, error) {
 }
 
 func (p *intSliceParser) ParseEnv(input string) (any, error) {
-	p.visited = true
 	s := strings.Split(input, p.Separator())
 	parsed := make([]int, 0, len(s))
 	for _, el := range s {
@@ -56,11 +55,11 @@ func (p *intSliceParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewIntSlice(name string, opts ...Option) *IntSlice {
+func IntSlice(name string, opts ...Option) *IntSliceFlag {
 	f := newFlag[[]int](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultIntSliceParser())
 	}
-	return &IntSlice{f}
+	return &IntSliceFlag{f}
 }

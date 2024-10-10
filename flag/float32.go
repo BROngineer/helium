@@ -8,7 +8,7 @@ import (
 
 type ffloat32 = flag[float32]
 
-type Float32 struct {
+type Float32Flag struct {
 	*ffloat32
 }
 
@@ -21,7 +21,7 @@ func defaultFloat32Parser() *float32Parser {
 }
 
 func (p *float32Parser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -48,11 +48,11 @@ func (p *float32Parser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewFloat32(name string, opts ...Option) *Float32 {
+func Float32(name string, opts ...Option) *Float32Flag {
 	f := newFlag[float32](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultFloat32Parser())
 	}
-	return &Float32{f}
+	return &Float32Flag{f}
 }

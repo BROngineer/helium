@@ -1,4 +1,4 @@
-package helium
+package flagset
 
 import (
 	"errors"
@@ -18,192 +18,192 @@ import (
 func assertParsedValue(t *testing.T, fs *FlagSet, r result) {
 	switch r.flagType {
 	case "string":
-		val := fs.GetString(r.flagName)
+		val := GetString(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetStringPtr(r.flagName)
+		ptr := GetStringPtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "stringSlice":
-		val := fs.GetStringSlice(r.flagName)
+		val := GetStringSlice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetStringSlicePtr(r.flagName)
+		ptr := GetStringSlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "bool":
-		val := fs.GetBool(r.flagName)
+		val := GetBool(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetBoolPtr(r.flagName)
+		ptr := GetBoolPtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "boolSlice":
-		val := fs.GetBoolSlice(r.flagName)
+		val := GetBoolSlice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetBoolSlicePtr(r.flagName)
+		ptr := GetBoolSlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "duration":
-		val := fs.GetDuration(r.flagName)
+		val := GetDuration(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetDurationPtr(r.flagName)
+		ptr := GetDurationPtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "durationSlice":
-		val := fs.GetDurationSlice(r.flagName)
+		val := GetDurationSlice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetDurationSlicePtr(r.flagName)
+		ptr := GetDurationSlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "int":
-		val := fs.GetInt(r.flagName)
+		val := GetInt(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetIntPtr(r.flagName)
+		ptr := GetIntPtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "intSlice":
-		val := fs.GetIntSlice(r.flagName)
+		val := GetIntSlice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetIntSlicePtr(r.flagName)
+		ptr := GetIntSlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "int8":
-		val := fs.GetInt8(r.flagName)
+		val := GetInt8(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetInt8Ptr(r.flagName)
+		ptr := GetInt8Ptr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "int8slice":
-		val := fs.GetInt8Slice(r.flagName)
+		val := GetInt8Slice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetInt8SlicePtr(r.flagName)
+		ptr := GetInt8SlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "int16":
-		val := fs.GetInt16(r.flagName)
+		val := GetInt16(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetInt16Ptr(r.flagName)
+		ptr := GetInt16Ptr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "int16slice":
-		val := fs.GetInt16Slice(r.flagName)
+		val := GetInt16Slice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetInt16SlicePtr(r.flagName)
+		ptr := GetInt16SlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "int32":
-		val := fs.GetInt32(r.flagName)
+		val := GetInt32(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetInt32Ptr(r.flagName)
+		ptr := GetInt32Ptr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "int32slice":
-		val := fs.GetInt32Slice(r.flagName)
+		val := GetInt32Slice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetInt32SlicePtr(r.flagName)
+		ptr := GetInt32SlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "int64":
-		val := fs.GetInt64(r.flagName)
+		val := GetInt64(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetInt64Ptr(r.flagName)
+		ptr := GetInt64Ptr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "int64slice":
-		val := fs.GetInt64Slice(r.flagName)
+		val := GetInt64Slice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetInt64SlicePtr(r.flagName)
+		ptr := GetInt64SlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "uint":
-		val := fs.GetUint(r.flagName)
+		val := GetUint(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetUintPtr(r.flagName)
+		ptr := GetUintPtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "uintSlice":
-		val := fs.GetUintSlice(r.flagName)
+		val := GetUintSlice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetUintSlicePtr(r.flagName)
+		ptr := GetUintSlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "uint8":
-		val := fs.GetUint8(r.flagName)
+		val := GetUint8(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetUint8Ptr(r.flagName)
+		ptr := GetUint8Ptr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "uint8slice":
-		val := fs.GetUint8Slice(r.flagName)
+		val := GetUint8Slice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetUint8SlicePtr(r.flagName)
+		ptr := GetUint8SlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "uint16":
-		val := fs.GetUint16(r.flagName)
+		val := GetUint16(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetUint16Ptr(r.flagName)
+		ptr := GetUint16Ptr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "uint16slice":
-		val := fs.GetUint16Slice(r.flagName)
+		val := GetUint16Slice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetUint16SlicePtr(r.flagName)
+		ptr := GetUint16SlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "uint32":
-		val := fs.GetUint32(r.flagName)
+		val := GetUint32(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetUint32Ptr(r.flagName)
+		ptr := GetUint32Ptr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "uint32slice":
-		val := fs.GetUint32Slice(r.flagName)
+		val := GetUint32Slice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetUint32SlicePtr(r.flagName)
+		ptr := GetUint32SlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "uint64":
-		val := fs.GetUint64(r.flagName)
+		val := GetUint64(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetUint64Ptr(r.flagName)
+		ptr := GetUint64Ptr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "uint64slice":
-		val := fs.GetUint64Slice(r.flagName)
+		val := GetUint64Slice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetUint64SlicePtr(r.flagName)
+		ptr := GetUint64SlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "float32":
-		val := fs.GetFloat32(r.flagName)
+		val := GetFloat32(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetFloat32Ptr(r.flagName)
+		ptr := GetFloat32Ptr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "float32slice":
-		val := fs.GetFloat32Slice(r.flagName)
+		val := GetFloat32Slice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetFloat32SlicePtr(r.flagName)
+		ptr := GetFloat32SlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "float64":
-		val := fs.GetFloat64(r.flagName)
+		val := GetFloat64(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetFloat64Ptr(r.flagName)
+		ptr := GetFloat64Ptr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "float64slice":
-		val := fs.GetFloat64Slice(r.flagName)
+		val := GetFloat64Slice(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := fs.GetFloat64SlicePtr(r.flagName)
+		ptr := GetFloat64SlicePtr(fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	case "counter":
-		val := fs.GetCounter(r.flagName)
+		val := GetCounter(fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
 	case "custom":
-		val := GetCustomFlag[custom](fs, r.flagName)
+		val := GetTypedFlag[custom](fs, r.flagName)
 		assert.Equal(t, r.flagValue, val)
-		ptr := GetCustomFlagPtr[custom](fs, r.flagName)
+		ptr := GetTypedFlagPtr[custom](fs, r.flagName)
 		require.NotNil(t, ptr)
 		assert.Equal(t, r.flagValue, *ptr)
 	default:
@@ -256,9 +256,9 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.String("sample-string")
-				fs.Bool("sample-bool")
+				fs := New().
+					BindFlag(flag.String("sample-string")).
+					BindFlag(flag.Bool("sample-bool")).Build()
 				return fs
 			},
 			expected: expected{
@@ -273,9 +273,9 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse error",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.String("sample-string")
-				fs.Bool("sample-bool")
+				fs := New().
+					BindFlag(flag.String("sample-string")).
+					BindFlag(flag.Bool("sample-bool")).Build()
 				return fs
 			},
 			expected: expected{
@@ -288,10 +288,10 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse shorthand",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.String("sample-string")
-				fs.Bool("sample-bool")
-				fs.Counter("sample-counter", flag.Shorthand("c"))
+				fs := New().
+					BindFlag(flag.String("sample-string")).
+					BindFlag(flag.Bool("sample-bool")).
+					BindFlag(flag.Counter("sample-counter", flag.Shorthand("c"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -307,10 +307,10 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse stacked",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.Bool("sample-bool-one", flag.Shorthand("o"))
-				fs.Bool("sample-bool-two", flag.Shorthand("t"))
-				fs.Counter("sample-counter", flag.Shorthand("c"))
+				fs := New().
+					BindFlag(flag.Bool("sample-bool-one", flag.Shorthand("o"))).
+					BindFlag(flag.Bool("sample-bool-two", flag.Shorthand("t"))).
+					BindFlag(flag.Counter("sample-counter", flag.Shorthand("c"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -326,10 +326,10 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse stacked with value",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.Bool("sample-bool", flag.Shorthand("b"))
-				fs.Counter("sample-counter", flag.Shorthand("c"))
-				fs.Int("sample-int", flag.Shorthand("i"))
+				fs := New().
+					BindFlag(flag.Bool("sample-bool", flag.Shorthand("b"))).
+					BindFlag(flag.Counter("sample-counter", flag.Shorthand("c"))).
+					BindFlag(flag.Int("sample-int", flag.Shorthand("i"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -345,9 +345,9 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse error duplicate",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.String("sample-string")
-				fs.Bool("sample-bool")
+				fs := New().
+					BindFlag(flag.String("sample-string")).
+					BindFlag(flag.Bool("sample-bool")).Build()
 				return fs
 			},
 			expected: expected{
@@ -360,9 +360,9 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse slice duplicate",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.String("sample-string")
-				fs.BoolSlice("sample-bool")
+				fs := New().
+					BindFlag(flag.String("sample-string")).
+					BindFlag(flag.BoolSlice("sample-bool")).Build()
 				return fs
 			},
 			expected: expected{
@@ -377,8 +377,8 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse unknown flag error",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.String("sample-string")
+				fs := New().
+					BindFlag(flag.String("sample-string")).Build()
 				return fs
 			},
 			expected: expected{
@@ -391,8 +391,8 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse unknown shorthand error",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.String("sample-string", flag.Shorthand("s"))
+				fs := New().
+					BindFlag(flag.String("sample-string", flag.Shorthand("s"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -405,8 +405,8 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse unknown shorthand stacked error",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.String("sample-string", flag.Shorthand("s"))
+				fs := New().
+					BindFlag(flag.String("sample-string", flag.Shorthand("s"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -419,8 +419,8 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse stacked no value error",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.String("sample-string", flag.Shorthand("s"))
+				fs := New().
+					BindFlag(flag.String("sample-string", flag.Shorthand("s"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -433,8 +433,8 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse no value error",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.String("sample-string", flag.Shorthand("s"))
+				fs := New().
+					BindFlag(flag.String("sample-string", flag.Shorthand("s"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -447,12 +447,12 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse integers",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.Int("sample-int", flag.Shorthand("a"))
-				fs.Int8("sample-int8", flag.Shorthand("b"))
-				fs.Int16("sample-int16", flag.Shorthand("c"))
-				fs.Int32("sample-int32", flag.Shorthand("d"))
-				fs.Int64("sample-int64", flag.Shorthand("e"))
+				fs := New().
+					BindFlag(flag.Int("sample-int", flag.Shorthand("a"))).
+					BindFlag(flag.Int8("sample-int8", flag.Shorthand("b"))).
+					BindFlag(flag.Int16("sample-int16", flag.Shorthand("c"))).
+					BindFlag(flag.Int32("sample-int32", flag.Shorthand("d"))).
+					BindFlag(flag.Int64("sample-int64", flag.Shorthand("e"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -470,12 +470,12 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse unsigned integers",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.Uint("sample-uint", flag.Shorthand("a"))
-				fs.Uint8("sample-uint8", flag.Shorthand("b"))
-				fs.Uint16("sample-uint16", flag.Shorthand("c"))
-				fs.Uint32("sample-uint32", flag.Shorthand("d"))
-				fs.Uint64("sample-uint64", flag.Shorthand("e"))
+				fs := New().
+					BindFlag(flag.Uint("sample-uint", flag.Shorthand("a"))).
+					BindFlag(flag.Uint8("sample-uint8", flag.Shorthand("b"))).
+					BindFlag(flag.Uint16("sample-uint16", flag.Shorthand("c"))).
+					BindFlag(flag.Uint32("sample-uint32", flag.Shorthand("d"))).
+					BindFlag(flag.Uint64("sample-uint64", flag.Shorthand("e"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -493,12 +493,12 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse integer slices",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.IntSlice("sample-int", flag.Shorthand("a"))
-				fs.Int8Slice("sample-int8", flag.Shorthand("b"))
-				fs.Int16Slice("sample-int16", flag.Shorthand("c"))
-				fs.Int32Slice("sample-int32", flag.Shorthand("d"), flag.Separator("|"))
-				fs.Int64Slice("sample-int64", flag.Shorthand("e"), flag.Separator(";"))
+				fs := New().
+					BindFlag(flag.IntSlice("sample-int", flag.Shorthand("a"))).
+					BindFlag(flag.Int8Slice("sample-int8", flag.Shorthand("b"))).
+					BindFlag(flag.Int16Slice("sample-int16", flag.Shorthand("c"))).
+					BindFlag(flag.Int32Slice("sample-int32", flag.Shorthand("d"), flag.Separator("|"))).
+					BindFlag(flag.Int64Slice("sample-int64", flag.Shorthand("e"), flag.Separator(";"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -523,12 +523,12 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse unsigned integers",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.UintSlice("sample-uint", flag.Shorthand("a"))
-				fs.Uint8Slice("sample-uint8", flag.Shorthand("b"))
-				fs.Uint16Slice("sample-uint16", flag.Shorthand("c"))
-				fs.Uint32Slice("sample-uint32", flag.Shorthand("d"))
-				fs.Uint64Slice("sample-uint64", flag.Shorthand("e"))
+				fs := New().
+					BindFlag(flag.UintSlice("sample-uint", flag.Shorthand("a"))).
+					BindFlag(flag.Uint8Slice("sample-uint8", flag.Shorthand("b"))).
+					BindFlag(flag.Uint16Slice("sample-uint16", flag.Shorthand("c"))).
+					BindFlag(flag.Uint32Slice("sample-uint32", flag.Shorthand("d"))).
+					BindFlag(flag.Uint64Slice("sample-uint64", flag.Shorthand("e"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -546,11 +546,11 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse floats",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.Float32("sample-float32", flag.Shorthand("a"))
-				fs.Float64("sample-float64", flag.Shorthand("b"))
-				fs.Float32Slice("sample-float32-slice", flag.Shorthand("c"))
-				fs.Float64Slice("sample-float64-slice", flag.Shorthand("d"))
+				fs := New().
+					BindFlag(flag.Float32("sample-float32", flag.Shorthand("a"))).
+					BindFlag(flag.Float64("sample-float64", flag.Shorthand("b"))).
+					BindFlag(flag.Float32Slice("sample-float32-slice", flag.Shorthand("c"))).
+					BindFlag(flag.Float64Slice("sample-float64-slice", flag.Shorthand("d"))).Build()
 				return fs
 			},
 			expected: expected{
@@ -573,10 +573,11 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "parse string slice and duration",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				fs.Duration("sample-duration", flag.Shorthand("a"))
-				fs.StringSlice("sample-string", flag.Shorthand("b"), flag.Separator(";"))
-				fs.DurationSlice("sample-duration-slice", flag.Shorthand("c"), flag.Separator(" "))
+				fs := New().
+					BindFlag(flag.Duration("sample-duration", flag.Shorthand("a"))).
+					BindFlag(flag.StringSlice("sample-string", flag.Shorthand("b"), flag.Separator(";"))).
+					BindFlag(flag.DurationSlice("sample-duration-slice", flag.Shorthand("c"), flag.Separator(" "))).
+					Build()
 				return fs
 			},
 			expected: expected{
@@ -596,8 +597,7 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "custom flag no parser error",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				CustomFlag[custom](fs, "sample")
+				fs := New().BindFlag(flag.Typed[custom]("sample")).Build()
 				return fs
 			},
 			expected: expected{
@@ -610,8 +610,9 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "custom flag no error",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				CustomFlag[custom](fs, "sample", flag.Parser(&customParser{&parser.EmbeddedParser{}}))
+				fs := New().
+					BindFlag(flag.Typed[custom]("sample", flag.Parser(&customParser{&parser.EmbeddedParser{}}))).
+					Build()
 				return fs
 			},
 			expected: expected{
@@ -625,8 +626,9 @@ func TestFlagSet_Parse(t *testing.T) {
 		{
 			name: "custom flag parse error",
 			flagSet: func() *FlagSet {
-				fs := NewFlagSet()
-				CustomFlag[custom](fs, "sample", flag.Parser(&customParser{&parser.EmbeddedParser{}}))
+				fs := New().
+					BindFlag(flag.Typed[custom]("sample", flag.Parser(&customParser{&parser.EmbeddedParser{}}))).
+					Build()
 				return fs
 			},
 			expected: expected{
@@ -672,10 +674,10 @@ func TestFlagSet_BindEnvVars(t *testing.T) {
 		{
 			name: "env vars success",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{envOptions: []env.Option{env.Prefix("test1"), env.Capitalized()}}
-				fs.String("sample-string")
-				fs.Bool("sample-bool")
-				fs.Duration("sample-duration")
+				fs := New(env.Prefix("test1"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.String("sample-string")).
+					BindFlag(flag.Bool("sample-bool")).
+					BindFlag(flag.Duration("sample-duration")).Build()
 				return fs
 			},
 			variables: map[string]string{
@@ -695,10 +697,10 @@ func TestFlagSet_BindEnvVars(t *testing.T) {
 		{
 			name: "env vars failed",
 			flagSet: func() *FlagSet {
-				fs := &FlagSet{envOptions: []env.Option{env.Prefix("test2"), env.Capitalized()}}
-				fs.String("sample-string")
-				fs.Bool("sample-bool")
-				fs.Duration("sample-duration")
+				fs := New(env.Prefix("test2"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.String("sample-string")).
+					BindFlag(flag.Bool("sample-bool")).
+					BindFlag(flag.Duration("sample-duration")).Build()
 				return fs
 			},
 			variables: map[string]string{
@@ -733,7 +735,7 @@ func TestFlagSet_BindEnvVars(t *testing.T) {
 				}
 			}()
 			fs := tt.flagSet()
-			err := fs.BindEnvVars("-", "_")
+			err := fs.BindEnvVars()
 			if tt.expected.err {
 				require.Error(t, err)
 				assert.True(t, errors.Is(err, tt.expected.expectedErr))
