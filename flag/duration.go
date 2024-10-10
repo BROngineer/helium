@@ -8,7 +8,7 @@ import (
 
 type duration = flag[time.Duration]
 
-type Duration struct {
+type DurationFlag struct {
 	*duration
 }
 
@@ -21,7 +21,7 @@ func defaultDurationParser() *durationParser {
 }
 
 func (p *durationParser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -46,11 +46,11 @@ func (p *durationParser) ParseEnv(input string) (any, error) {
 	return &parsed, err
 }
 
-func NewDuration(name string, opts ...Option) *Duration {
+func Duration(name string, opts ...Option) *DurationFlag {
 	f := newFlag[time.Duration](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultDurationParser())
 	}
-	return &Duration{f}
+	return &DurationFlag{f}
 }

@@ -9,7 +9,7 @@ import (
 
 type int32Slice = flag[[]int32]
 
-type Int32Slice struct {
+type Int32SliceFlag struct {
 	*int32Slice
 }
 
@@ -35,7 +35,7 @@ func (p *int32SliceParser) ParseCmd(input string) (any, error) {
 		}
 		parsed = append(parsed, int32(v))
 	}
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		stored := DerefOrDie[[]int32](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
@@ -55,11 +55,11 @@ func (p *int32SliceParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewInt32Slice(name string, opts ...Option) *Int32Slice {
+func Int32Slice(name string, opts ...Option) *Int32SliceFlag {
 	f := newFlag[[]int32](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultInt32SliceParser())
 	}
-	return &Int32Slice{f}
+	return &Int32SliceFlag{f}
 }

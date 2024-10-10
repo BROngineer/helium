@@ -3,10 +3,12 @@ package parser
 import "github.com/brongineer/helium/errors"
 
 type FlagParser interface {
-	SetVisited(bool)
+	SetFromEnv(bool)
+	SetFromCmd(bool)
 	SetSeparator(string)
 	SetCurrentValue(any)
-	IsVisited() bool
+	IsSetFromEnv() bool
+	IsSetFromCmd() bool
 	Separator() string
 	CurrentValue() any
 	ParseCmd(string) (any, error)
@@ -14,17 +16,26 @@ type FlagParser interface {
 }
 
 type EmbeddedParser struct {
-	visited      bool
+	fromEnv      bool
+	fromCmd      bool
 	separator    string
 	currentValue any
 }
 
-func (p *EmbeddedParser) SetVisited(v bool) {
-	p.visited = v
+func (p *EmbeddedParser) SetFromEnv(v bool) {
+	p.fromEnv = v
 }
 
-func (p *EmbeddedParser) IsVisited() bool {
-	return p.visited
+func (p *EmbeddedParser) IsSetFromEnv() bool {
+	return p.fromEnv
+}
+
+func (p *EmbeddedParser) SetFromCmd(v bool) {
+	p.fromCmd = v
+}
+
+func (p *EmbeddedParser) IsSetFromCmd() bool {
+	return p.fromCmd
 }
 
 func (p *EmbeddedParser) SetSeparator(s string) {

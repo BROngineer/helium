@@ -8,7 +8,7 @@ import (
 
 type fint16 = flag[int16]
 
-type Int16 struct {
+type Int16Flag struct {
 	*fint16
 }
 
@@ -21,7 +21,7 @@ func defaultInt16Parser() *int16Parser {
 }
 
 func (p *int16Parser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -48,11 +48,11 @@ func (p *int16Parser) ParseEnv(value string) (any, error) {
 	return &parsed, nil
 }
 
-func NewInt16(name string, opts ...Option) *Int16 {
+func Int16(name string, opts ...Option) *Int16Flag {
 	f := newFlag[int16](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultInt16Parser())
 	}
-	return &Int16{f}
+	return &Int16Flag{f}
 }

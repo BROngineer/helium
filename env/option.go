@@ -3,6 +3,7 @@ package env
 type config interface {
 	setPrefix(string)
 	setCapitalize()
+	setReplacement(string, string)
 }
 
 type Option interface {
@@ -27,4 +28,17 @@ func (o capitalized) apply(c config) {
 
 func Capitalized() Option {
 	return capitalized{}
+}
+
+type varNameReplacement struct {
+	old string
+	new string
+}
+
+func (o varNameReplacement) apply(c config) {
+	c.setReplacement(o.old, o.new)
+}
+
+func VarNameReplace(oldChar, newChar string) Option {
+	return varNameReplacement{oldChar, newChar}
 }

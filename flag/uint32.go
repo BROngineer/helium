@@ -8,7 +8,7 @@ import (
 
 type fuint32 = flag[uint32]
 
-type Uint32 struct {
+type Uint32Flag struct {
 	*fuint32
 }
 
@@ -21,7 +21,7 @@ func defaultUint32Parser() *uint32Parser {
 }
 
 func (p *uint32Parser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -48,11 +48,11 @@ func (p *uint32Parser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewUint32(name string, opts ...Option) *Uint32 {
+func Uint32(name string, opts ...Option) *Uint32Flag {
 	f := newFlag[uint32](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultUint32Parser())
 	}
-	return &Uint32{f}
+	return &Uint32Flag{f}
 }

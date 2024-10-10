@@ -9,7 +9,7 @@ import (
 
 type durationSlice = flag[[]time.Duration]
 
-type DurationSlice struct {
+type DurationSliceFlag struct {
 	*durationSlice
 }
 
@@ -35,7 +35,7 @@ func (p *durationSliceParser) ParseCmd(input string) (any, error) {
 		}
 		parsed = append(parsed, v)
 	}
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		stored := DerefOrDie[[]time.Duration](p.CurrentValue())
 		parsed = append(stored, parsed...)
 	}
@@ -55,11 +55,11 @@ func (p *durationSliceParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewDurationSlice(name string, opts ...Option) *DurationSlice {
+func DurationSlice(name string, opts ...Option) *DurationSliceFlag {
 	f := newFlag[[]time.Duration](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultDurationSliceParser())
 	}
-	return &DurationSlice{f}
+	return &DurationSliceFlag{f}
 }

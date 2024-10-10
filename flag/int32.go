@@ -8,7 +8,7 @@ import (
 
 type fint32 = flag[int32]
 
-type Int32 struct {
+type Int32Flag struct {
 	*fint32
 }
 
@@ -21,7 +21,7 @@ func defaultInt32Parser() *int32Parser {
 }
 
 func (p *int32Parser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -48,11 +48,11 @@ func (p *int32Parser) ParseEnv(value string) (any, error) {
 	return &parsed, nil
 }
 
-func NewInt32(name string, opts ...Option) *Int32 {
+func Int32(name string, opts ...Option) *Int32Flag {
 	f := newFlag[int32](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultInt32Parser())
 	}
-	return &Int32{f}
+	return &Int32Flag{f}
 }

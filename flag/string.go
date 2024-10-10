@@ -6,7 +6,7 @@ import (
 
 type fstring = flag[string]
 
-type String struct {
+type StringFlag struct {
 	*fstring
 }
 
@@ -19,7 +19,7 @@ func defaultStringParser() *stringParser {
 }
 
 func (p *stringParser) ParseCmd(input string) (any, error) {
-	if p.IsVisited() {
+	if p.IsSetFromCmd() {
 		return nil, errors.ErrFlagVisited
 	}
 	var empty string
@@ -35,11 +35,11 @@ func (p *stringParser) ParseEnv(input string) (any, error) {
 	return &parsed, nil
 }
 
-func NewString(name string, opts ...Option) *String {
+func String(name string, opts ...Option) *StringFlag {
 	f := newFlag[string](name)
 	applyForFlag(f, opts...)
 	if f.Parser() == nil {
 		f.setParser(defaultStringParser())
 	}
-	return &String{f}
+	return &StringFlag{f}
 }
