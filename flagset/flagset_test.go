@@ -677,18 +677,27 @@ func TestFlagSet_BindEnvVars(t *testing.T) {
 				fs := New(env.Prefix("test1"), env.Capitalized(), env.VarNameReplace("-", "_")).
 					BindFlag(flag.String("sample-string")).
 					BindFlag(flag.Bool("sample-bool")).
+					BindFlag(flag.Counter("sample-counter")).
+					BindFlag(flag.Float32("sample-float32")).
+					BindFlag(flag.Float64("sample-float64")).
 					BindFlag(flag.Duration("sample-duration")).Build()
 				return fs
 			},
 			variables: map[string]string{
 				"TEST1_SAMPLE_STRING":   "foo",
 				"TEST1_SAMPLE_BOOL":     "true",
+				"TEST1_SAMPLE_COUNTER":  "1",
+				"TEST1_SAMPLE_FLOAT32":  "3.14",
+				"TEST1_SAMPLE_FLOAT64":  "3.14",
 				"TEST1_SAMPLE_DURATION": "15m",
 			},
 			expected: expected{
 				parsed: []result{
 					{flagName: "sample-duration", flagValue: time.Minute * 15, flagType: "duration"},
 					{flagName: "sample-string", flagValue: "foo", flagType: "string"},
+					{flagName: "sample-counter", flagValue: 1, flagType: "counter"},
+					{flagName: "sample-float32", flagValue: float32(3.14), flagType: "float32"},
+					{flagName: "sample-float64", flagValue: 3.14, flagType: "float64"},
 					{flagName: "sample-bool", flagValue: true, flagType: "bool"},
 				},
 				err: false,
@@ -700,20 +709,285 @@ func TestFlagSet_BindEnvVars(t *testing.T) {
 				fs := New(env.Prefix("test2"), env.Capitalized(), env.VarNameReplace("-", "_")).
 					BindFlag(flag.String("sample-string")).
 					BindFlag(flag.Bool("sample-bool")).
+					BindFlag(flag.Counter("sample-counter")).
+					BindFlag(flag.Float32("sample-float32")).
+					BindFlag(flag.Float64("sample-float64")).
 					BindFlag(flag.Duration("sample-duration")).Build()
 				return fs
 			},
 			variables: map[string]string{
 				"TEST2_SAMPLE_STRING":   "foo",
 				"TEST2_SAMPLE_BOOL":     "yes",
+				"TEST2_SAMPLE_COUNTER":  "one",
+				"TEST2_SAMPLE_FLOAT32":  "3.4e+39",
+				"TEST2_SAMPLE_FLOAT64":  "1.7e+308",
 				"TEST2_SAMPLE_DURATION": "15m",
 			},
 			expected: expected{
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrParseFailed,
+			},
+		},
+		{
+			name: "env vars slices success",
+			flagSet: func() *FlagSet {
+				fs := New(env.Prefix("test1-slice"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.StringSlice("sample-string")).
+					BindFlag(flag.BoolSlice("sample-bool")).
+					BindFlag(flag.Float32Slice("sample-float32")).
+					BindFlag(flag.Float64Slice("sample-float64")).
+					BindFlag(flag.DurationSlice("sample-duration")).Build()
+				return fs
+			},
+			variables: map[string]string{
+				"TEST1_SLICE_SAMPLE_STRING":   "foo",
+				"TEST1_SLICE_SAMPLE_BOOL":     "true",
+				"TEST1_SLICE_SAMPLE_FLOAT32":  "3.14",
+				"TEST1_SLICE_SAMPLE_FLOAT64":  "3.14",
+				"TEST1_SLICE_SAMPLE_DURATION": "15m",
+			},
+			expected: expected{
 				parsed: []result{
-					{flagName: "sample-duration", flagValue: time.Minute * 15, flagType: "duration"},
-					{flagName: "sample-string", flagValue: "foo", flagType: "string"},
-					{flagName: "sample-bool", flagValue: true, flagType: "bool"},
+					{flagName: "sample-duration", flagValue: []time.Duration{time.Minute * 15}, flagType: "durationSlice"},
+					{flagName: "sample-string", flagValue: []string{"foo"}, flagType: "stringSlice"},
+					{flagName: "sample-float32", flagValue: []float32{3.14}, flagType: "float32slice"},
+					{flagName: "sample-float64", flagValue: []float64{3.14}, flagType: "float64slice"},
+					{flagName: "sample-bool", flagValue: []bool{true}, flagType: "boolSlice"},
 				},
+				err: false,
+			},
+		},
+		{
+			name: "env vars slices failed",
+			flagSet: func() *FlagSet {
+				fs := New(env.Prefix("test2-slice"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.BoolSlice("sample-bool")).
+					BindFlag(flag.Float32Slice("sample-float32")).
+					BindFlag(flag.Float64Slice("sample-float64")).
+					BindFlag(flag.DurationSlice("sample-duration")).Build()
+				return fs
+			},
+			variables: map[string]string{
+				"TEST2_SLICE_SAMPLE_BOOL":     "yes",
+				"TEST2_SLICE_SAMPLE_FLOAT32":  "3.4e+39",
+				"TEST2_SLICE_SAMPLE_FLOAT64":  "1.7e+308",
+				"TEST2_SLICE_SAMPLE_DURATION": "15m",
+			},
+			expected: expected{
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrParseFailed,
+			},
+		},
+		{
+			name: "env vars signed integers success",
+			flagSet: func() *FlagSet {
+				fs := New(env.Prefix("integers-success"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.Int("sample-int")).
+					BindFlag(flag.Int8("sample-int8")).
+					BindFlag(flag.Int16("sample-int16")).
+					BindFlag(flag.Int32("sample-int32")).
+					BindFlag(flag.Int64("sample-int64")).Build()
+				return fs
+			},
+			variables: map[string]string{
+				"INTEGERS_SUCCESS_SAMPLE_INT":   "42",
+				"INTEGERS_SUCCESS_SAMPLE_INT8":  "42",
+				"INTEGERS_SUCCESS_SAMPLE_INT16": "42",
+				"INTEGERS_SUCCESS_SAMPLE_INT32": "42",
+				"INTEGERS_SUCCESS_SAMPLE_INT64": "42",
+			},
+			expected: expected{
+				parsed: []result{
+					{flagName: "sample-int", flagValue: 42, flagType: "int"},
+					{flagName: "sample-int8", flagValue: int8(42), flagType: "int8"},
+					{flagName: "sample-int16", flagValue: int16(42), flagType: "int16"},
+					{flagName: "sample-int32", flagValue: int32(42), flagType: "int32"},
+					{flagName: "sample-int64", flagValue: int64(42), flagType: "int64"},
+				},
+				err: false,
+			},
+		},
+		{
+			name: "env vars signed integers failure",
+			flagSet: func() *FlagSet {
+				fs := New(env.Prefix("integers-fail"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.Int("sample-int")).
+					BindFlag(flag.Int8("sample-int8")).
+					BindFlag(flag.Int16("sample-int16")).
+					BindFlag(flag.Int32("sample-int32")).
+					BindFlag(flag.Int64("sample-int64")).Build()
+				return fs
+			},
+			variables: map[string]string{
+				"INTEGERS_FAIL_SAMPLE_INT":   "42.",
+				"INTEGERS_FAIL_SAMPLE_INT8":  "1000",
+				"INTEGERS_FAIL_SAMPLE_INT16": "-32800",
+				"INTEGERS_FAIL_SAMPLE_INT32": "65656",
+				"INTEGERS_FAIL_SAMPLE_INT64": "9223372036854775809",
+			},
+			expected: expected{
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrParseFailed,
+			},
+		},
+		{
+			name: "env vars unsigned integers success",
+			flagSet: func() *FlagSet {
+				fs := New(env.Prefix("uintegers-success"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.Uint("sample-uint")).
+					BindFlag(flag.Uint8("sample-uint8")).
+					BindFlag(flag.Uint16("sample-uint16")).
+					BindFlag(flag.Uint32("sample-uint32")).
+					BindFlag(flag.Uint64("sample-uint64")).Build()
+				return fs
+			},
+			variables: map[string]string{
+				"UINTEGERS_SUCCESS_SAMPLE_UINT":   "42",
+				"UINTEGERS_SUCCESS_SAMPLE_UINT8":  "42",
+				"UINTEGERS_SUCCESS_SAMPLE_UINT16": "42",
+				"UINTEGERS_SUCCESS_SAMPLE_UINT32": "42",
+				"UINTEGERS_SUCCESS_SAMPLE_UINT64": "42",
+			},
+			expected: expected{
+				parsed: []result{
+					{flagName: "sample-uint", flagValue: uint(42), flagType: "uint"},
+					{flagName: "sample-uint8", flagValue: uint8(42), flagType: "uint8"},
+					{flagName: "sample-uint16", flagValue: uint16(42), flagType: "uint16"},
+					{flagName: "sample-uint32", flagValue: uint32(42), flagType: "uint32"},
+					{flagName: "sample-uint64", flagValue: uint64(42), flagType: "uint64"},
+				},
+				err: false,
+			},
+		},
+		{
+			name: "env vars signed uintegers failure",
+			flagSet: func() *FlagSet {
+				fs := New(env.Prefix("uintegers-fail"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.Uint("sample-uint")).
+					BindFlag(flag.Uint8("sample-uint8")).
+					BindFlag(flag.Uint16("sample-uint16")).
+					BindFlag(flag.Uint32("sample-uint32")).
+					BindFlag(flag.Uint64("sample-uint64")).Build()
+				return fs
+			},
+			variables: map[string]string{
+				"UINTEGERS_FAIL_SAMPLE_UINT":   "42.",
+				"UINTEGERS_FAIL_SAMPLE_UINT8":  "1000",
+				"UINTEGERS_FAIL_SAMPLE_UINT16": "-32800",
+				"UINTEGERS_FAIL_SAMPLE_UINT32": "-165656",
+				"UINTEGERS_FAIL_SAMPLE_UINT64": "184467440737095516150",
+			},
+			expected: expected{
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrParseFailed,
+			},
+		},
+		{
+			name: "env vars signed integers slices success",
+			flagSet: func() *FlagSet {
+				fs := New(env.Prefix("integers-slice-success"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.IntSlice("sample-int")).
+					BindFlag(flag.Int8Slice("sample-int8")).
+					BindFlag(flag.Int16Slice("sample-int16")).
+					BindFlag(flag.Int32Slice("sample-int32")).
+					BindFlag(flag.Int64Slice("sample-int64")).Build()
+				return fs
+			},
+			variables: map[string]string{
+				"INTEGERS_SLICE_SUCCESS_SAMPLE_INT":   "42",
+				"INTEGERS_SLICE_SUCCESS_SAMPLE_INT8":  "42",
+				"INTEGERS_SLICE_SUCCESS_SAMPLE_INT16": "42",
+				"INTEGERS_SLICE_SUCCESS_SAMPLE_INT32": "42",
+				"INTEGERS_SLICE_SUCCESS_SAMPLE_INT64": "42",
+			},
+			expected: expected{
+				parsed: []result{
+					{flagName: "sample-int", flagValue: []int{42}, flagType: "intSlice"},
+					{flagName: "sample-int8", flagValue: []int8{42}, flagType: "int8slice"},
+					{flagName: "sample-int16", flagValue: []int16{42}, flagType: "int16slice"},
+					{flagName: "sample-int32", flagValue: []int32{42}, flagType: "int32slice"},
+					{flagName: "sample-int64", flagValue: []int64{42}, flagType: "int64slice"},
+				},
+				err: false,
+			},
+		},
+		{
+			name: "env vars signed integers slices failure",
+			flagSet: func() *FlagSet {
+				fs := New(env.Prefix("integers-slice-failure"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.IntSlice("sample-int")).
+					BindFlag(flag.Int8Slice("sample-int8")).
+					BindFlag(flag.Int16Slice("sample-int16")).
+					BindFlag(flag.Int32Slice("sample-int32")).
+					BindFlag(flag.Int64Slice("sample-int64")).Build()
+				return fs
+			},
+			variables: map[string]string{
+				"INTEGERS_SLICE_FAILURE_SAMPLE_INT":   "42.",
+				"INTEGERS_SLICE_FAILURE_SAMPLE_INT8":  "1000",
+				"INTEGERS_SLICE_FAILURE_SAMPLE_INT16": "-32800",
+				"INTEGERS_SLICE_FAILURE_SAMPLE_INT32": "65656",
+				"INTEGERS_SLICE_FAILURE_SAMPLE_INT64": "18446744073709551615",
+			},
+			expected: expected{
+				parsed:      []result{},
+				err:         true,
+				expectedErr: ferrors.ErrParseFailed,
+			},
+		},
+		{
+			name: "env vars unsigned integers slices success",
+			flagSet: func() *FlagSet {
+				fs := New(env.Prefix("uintegers-slice-success"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.UintSlice("sample-uint")).
+					BindFlag(flag.Uint8Slice("sample-uint8")).
+					BindFlag(flag.Uint16Slice("sample-uint16")).
+					BindFlag(flag.Uint32Slice("sample-uint32")).
+					BindFlag(flag.Uint64Slice("sample-uint64")).Build()
+				return fs
+			},
+			variables: map[string]string{
+				"UINTEGERS_SLICE_SUCCESS_SAMPLE_UINT":   "42",
+				"UINTEGERS_SLICE_SUCCESS_SAMPLE_UINT8":  "42",
+				"UINTEGERS_SLICE_SUCCESS_SAMPLE_UINT16": "42",
+				"UINTEGERS_SLICE_SUCCESS_SAMPLE_UINT32": "42",
+				"UINTEGERS_SLICE_SUCCESS_SAMPLE_UINT64": "42",
+			},
+			expected: expected{
+				parsed: []result{
+					{flagName: "sample-uint", flagValue: []uint{42}, flagType: "uintSlice"},
+					{flagName: "sample-uint8", flagValue: []uint8{42}, flagType: "uint8slice"},
+					{flagName: "sample-uint16", flagValue: []uint16{42}, flagType: "uint16slice"},
+					{flagName: "sample-uint32", flagValue: []uint32{42}, flagType: "uint32slice"},
+					{flagName: "sample-uint64", flagValue: []uint64{42}, flagType: "uint64slice"},
+				},
+				err: false,
+			},
+		},
+		{
+			name: "env vars unsigned integers slices failure",
+			flagSet: func() *FlagSet {
+				fs := New(env.Prefix("uintegers-slice-failure"), env.Capitalized(), env.VarNameReplace("-", "_")).
+					BindFlag(flag.IntSlice("sample-uint")).
+					BindFlag(flag.Int8Slice("sample-uint8")).
+					BindFlag(flag.Int16Slice("sample-uint16")).
+					BindFlag(flag.Int32Slice("sample-uint32")).
+					BindFlag(flag.Int64Slice("sample-uint64")).Build()
+				return fs
+			},
+			variables: map[string]string{
+				"UINTEGERS_SLICE_FAILURE_SAMPLE_UINT":   "42.",
+				"UINTEGERS_SLICE_FAILURE_SAMPLE_UINT8":  "1000",
+				"UINTEGERS_SLICE_FAILURE_SAMPLE_UINT16": "-32800",
+				"UINTEGERS_SLICE_FAILURE_SAMPLE_UINT32": "-65656",
+				"UINTEGERS_SLICE_FAILURE_SAMPLE_UINT64": "1018446744073709551615",
+			},
+			expected: expected{
+				parsed:      []result{},
 				err:         true,
 				expectedErr: ferrors.ErrParseFailed,
 			},

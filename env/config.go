@@ -40,10 +40,11 @@ func (c *VarNameConstructor) setReplacement(oldChar, newChar string) {
 }
 
 func (c *VarNameConstructor) VarFromFlagName(name string) string {
-	varName := strings.ReplaceAll(name, c.varNameReplacement.old, c.varNameReplacement.new)
+	varName := name
 	if c.prefix != "" {
 		varName = fmt.Sprintf("%s_%s", c.prefix, varName)
 	}
+	varName = strings.ReplaceAll(varName, c.varNameReplacement.old, c.varNameReplacement.new)
 	if c.capitalize {
 		varName = strings.ToUpper(varName)
 	}
